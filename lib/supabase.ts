@@ -1,7 +1,8 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = process.env.SUPABASE_URL
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY
+// Используем NEXT_PUBLIC_ префикс для доступа в клиентском коде
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
 // Проверяем наличие переменных
 // Если переменные не установлены, создаем заглушку (для случаев когда Supabase не нужен, например для бота)
