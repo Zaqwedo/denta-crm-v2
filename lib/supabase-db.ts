@@ -3,6 +3,23 @@
 import { supabase, ensureAnonymousSession } from '../lib/supabase'
 import { logger } from './logger'
 
+/**
+ * Безопасно устанавливает анонимную сессию, игнорируя ошибки об отключенной анонимной аутентификации
+ */
+async function safeEnsureAnonymousSession(): Promise<void> {
+  try {
+    await ensureAnonymousSession()
+  } catch (authError: any) {
+    // Игнорируем ошибку, если анонимная аутентификация отключена
+    if (authError?.code === 'anonymous_provider_disabled' || authError?.status === 422) {
+      // Просто продолжаем без сессии - возможно RLS политики разрешают доступ
+      return
+    }
+    // Пробрасываем другие ошибки
+    throw authError
+  }
+}
+
 export interface PatientData {
   id?: string; // ID записи (UUID)
   ФИО: string; // ФИО (обязательное)
@@ -25,7 +42,7 @@ export interface PatientData {
 export async function getPatients(): Promise<PatientData[]> {
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     const { data, error } = await supabase
       .from('patients')
@@ -75,7 +92,7 @@ export async function getPatientChanges(patientId: string): Promise<Array<{
 }>> {
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     const { data, error } = await supabase
       .from('patient_changes')
@@ -103,7 +120,7 @@ export async function getPatientChanges(patientId: string): Promise<Array<{
 export async function getChangedPatients(): Promise<PatientData[]> {
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     // Получаем все записи с полями created_at и updated_at
     // Используем безопасный запрос, который не упадет, если updated_at еще не настроен
@@ -178,7 +195,7 @@ export async function addPatient(data: PatientData): Promise<void> {
 
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     const { error } = await supabase
       .from('patients')
@@ -285,7 +302,7 @@ export async function updatePatient(
 
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     // Получаем старые данные перед обновлением
     const { data: oldData, error: fetchError } = await supabase
@@ -333,7 +350,7 @@ export async function deletePatient(patientId: string): Promise<void> {
 
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     const { error } = await supabase
       .from('patients')
@@ -363,7 +380,7 @@ export async function archiveAndRemovePatient(patientId: string, deletedByEmail:
 
   try {
     // Устанавливаем анонимную сессию для RLS
-    await ensureAnonymousSession()
+    await safeEnsureAnonymousSession()
     
     // 1. Сначала получаем данные пациента
     const { data: patient, error: fetchError } = await supabase
