@@ -64,6 +64,13 @@ let anonymousSessionPromise: Promise<void> | null = null
 let sessionChecked = false
 
 export async function ensureAnonymousSession(): Promise<void> {
+  // Проверяем наличие переменных окружения перед попыткой установить сессию
+  if (!supabaseUrl || !supabaseAnonKey || supabaseUrl === 'https://placeholder.supabase.co') {
+    // Не пытаемся устанавливать сессию, если переменные не настроены
+    // Это может произойти во время build time или если переменные не установлены в Vercel
+    return Promise.resolve()
+  }
+
   // Если сессия уже устанавливается, ждем её
   if (anonymousSessionPromise) {
     return anonymousSessionPromise
