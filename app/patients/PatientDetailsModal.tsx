@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation'
 import { handleUpdatePatient, handleDeletePatient } from './actions'
 import { ToastManager } from './Toast'
 import { useAuth } from '../contexts/AuthContext'
-import { DOCTORS, NURSES, PATIENT_STATUSES } from '../lib/constants'
+import { DOCTORS, NURSES, PATIENT_STATUSES } from '../../lib/constants'
 
 interface PatientDetailsModalProps {
   patient: Record<string, any> // Теперь patient содержит "чистые" строковые данные
