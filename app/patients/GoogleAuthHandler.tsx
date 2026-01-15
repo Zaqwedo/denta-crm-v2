@@ -14,6 +14,8 @@ const ALLOWED_YANDEX_EMAILS: string[] = [
 const ALLOWED_GOOGLE_EMAILS: string[] = [
   // Добавьте разрешенные email адреса для Google авторизации
   // Например: 'user@gmail.com', 'admin@gmail.com'
+  "vitaliksport79@gmail.com",
+  "analystbeyondtaylor@gmail.com"
 ]
 
 export function GoogleAuthHandler() {
