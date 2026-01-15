@@ -258,7 +258,7 @@ export default function AdminDashboard() {
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center mb-4">
             <div>
               <h1 className="text-3xl font-bold text-gray-900 mb-2">Админ-панель</h1>
               <p className="text-gray-600">Управление данными приложения</p>
@@ -270,6 +270,24 @@ export default function AdminDashboard() {
               Выйти
             </button>
           </div>
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl transition-all"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Назад
+          </button>
         </div>
 
         {/* Messages */}
@@ -290,7 +308,7 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Врачи</h2>
             
             <form onSubmit={handleAddDoctor} className="mb-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={newDoctor}
@@ -301,7 +319,7 @@ export default function AdminDashboard() {
                 />
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all whitespace-nowrap"
                 >
                   Добавить
                 </button>
@@ -335,7 +353,7 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Медсестры</h2>
             
             <form onSubmit={handleAddNurse} className="mb-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="text"
                   value={newNurse}
@@ -346,7 +364,7 @@ export default function AdminDashboard() {
                 />
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all whitespace-nowrap"
                 >
                   Добавить
                 </button>
@@ -380,7 +398,7 @@ export default function AdminDashboard() {
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Белые списки email</h2>
             
             <form onSubmit={handleAddEmail} className="mb-4">
-              <div className="flex gap-2">
+              <div className="flex flex-col sm:flex-row gap-2">
                 <input
                   type="email"
                   value={newEmail}
@@ -392,7 +410,7 @@ export default function AdminDashboard() {
                 <select
                   value={newEmailProvider}
                   onChange={(e) => setNewEmailProvider(e.target.value as 'google' | 'yandex' | 'email')}
-                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none"
+                  className="px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none sm:w-auto w-full"
                 >
                   <option value="google">Google</option>
                   <option value="yandex">Yandex</option>
@@ -400,7 +418,7 @@ export default function AdminDashboard() {
                 </select>
                 <button
                   type="submit"
-                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all"
+                  className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl transition-all whitespace-nowrap sm:w-auto w-full"
                 >
                   Добавить
                 </button>

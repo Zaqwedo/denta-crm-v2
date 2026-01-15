@@ -45,6 +45,24 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center px-4">
       <div className="w-full max-w-md">
         <div className="bg-white rounded-2xl shadow-lg p-8">
+          <button
+            onClick={() => router.back()}
+            className="flex items-center gap-2 mb-6 text-gray-600 hover:text-gray-900 transition-colors"
+          >
+            <svg
+              width="20"
+              height="20"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <path d="M19 12H5M12 19l-7-7 7-7"/>
+            </svg>
+            Назад
+          </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2 text-center">
             Админ-панель
           </h1>
