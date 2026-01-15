@@ -145,11 +145,23 @@ const ALLOWED_EMAILS: string[] = [
 2. Найдите константу `ALLOWED_YANDEX_EMAILS`
 3. Добавьте разрешенные Yandex email адреса:
 
+#### Настройка белого списка для Google OAuth
+
+1. Откройте файл `app/patients/GoogleAuthHandler.tsx`
+2. Найдите константу `ALLOWED_GOOGLE_EMAILS`
+3. Добавьте разрешенные Google email адреса:
+
 ```typescript
 const ALLOWED_YANDEX_EMAILS: string[] = [
   'user@yandex.ru',
   'admin@yandex.com',
   'doctor@yandex.ru'
+]
+
+const ALLOWED_GOOGLE_EMAILS: string[] = [
+  'user@gmail.com',
+  'admin@gmail.com',
+  'doctor@gmail.com'
 ]
 ```
 
@@ -176,8 +188,20 @@ const ALLOWED_EMAILS = [
   'nurse1@clinic.com'
 ]
 
+const ALLOWED_YANDEX_EMAILS = [
+  'admin@yandex.ru',
+  'doctor1@yandex.ru'
+]
+
+const ALLOWED_GOOGLE_EMAILS = [
+  'admin@gmail.com',
+  'doctor1@gmail.com'
+]
+
 // Отключить ограничения (доступ всем)
 const ALLOWED_EMAILS = []
+const ALLOWED_YANDEX_EMAILS = []
+const ALLOWED_GOOGLE_EMAILS = []
 ```
 
 #### Безопасность:

@@ -53,6 +53,8 @@ export default function LoginPage() {
           setError('Ошибка авторизации через Яндекс. Попробуйте еще раз.')
         } else if (errorParam === 'yandex_email_not_allowed') {
           setError('Доступ ограничен. Пожалуйста, обратитесь к администратору для добавления вашего Yandex аккаунта в список разрешенных пользователей.')
+        } else if (errorParam === 'google_email_not_allowed') {
+          setError('Доступ ограничен. Пожалуйста, обратитесь к администратору для добавления вашего Google аккаунта в список разрешенных пользователей.')
         } else {
           setError(decodeURIComponent(errorParam))
         }
