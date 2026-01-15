@@ -51,6 +51,7 @@ export default async function handler(
       code: code as string,
       client_id: process.env.YANDEX_CLIENT_ID,
       client_secret: process.env.YANDEX_CLIENT_SECRET,
+      redirect_uri: redirectUri,
     })
 
     console.log('📤 Yandex Token exchange request:')
@@ -140,6 +141,7 @@ export default async function handler(
       first_name: userData.first_name || userData.real_name || 'User',
       last_name: userData.last_name || '',
       username: userData.login || userData.default_email || '',
+      email: userData.default_email || userData.login || '',
       photo_url: userData.default_avatar_id ? `https://avatars.yandex.net/get-yapic/${userData.default_avatar_id}/islands-200` : '',
     }
 
