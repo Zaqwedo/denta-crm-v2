@@ -8,9 +8,11 @@ export default async function handler(
 
   console.log('--- Yandex Callback ---')
   console.log('Query params:', JSON.stringify(req.query))
-  console.log('  - code:', code ? 'present' : 'missing')
+  console.log('  - code:', code ? `present (${(code as string).substring(0, 20)}...)` : 'missing')
   console.log('  - error:', error || 'none')
   console.log('  - error_description:', error_description || 'none')
+  console.log('  - Full URL:', req.url)
+  console.log('  - Method:', req.method)
 
   if (req.method !== 'GET') {
     return res.status(405).json({ error: 'Method not allowed' })
@@ -120,13 +122,17 @@ export default async function handler(
     })
 
     // Получаем информацию о пользователе
+    console.log('📥 Fetching user info from Yandex...')
     const userResponse = await fetch('https://login.yandex.ru/info', {
       headers: {
         Authorization: `OAuth ${tokenData.access_token}`,
       },
     })
 
+    console.log('📥 User info response status:', userResponse.status, userResponse.statusText)
+    
     const userData = await userResponse.json()
+    console.log('📥 User info response data:', JSON.stringify(userData, null, 2))
 
     if (!userResponse.ok) {
       console.error('Yandex user info error:', userData)
