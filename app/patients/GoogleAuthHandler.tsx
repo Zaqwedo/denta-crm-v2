@@ -8,7 +8,7 @@ import { supabase } from '@/lib/supabase'
 
 // Разрешенные Email адреса для авторизации
 const ALLOWED_YANDEX_EMAILS: string[] = [
-  'vladosabramov@yandex.ru'
+  'ladosabramov@yandex.ru'
 ]
 
 const ALLOWED_GOOGLE_EMAILS: string[] = [
