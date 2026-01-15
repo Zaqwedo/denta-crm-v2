@@ -24,7 +24,7 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (user: User, authType?: 'email') => void
+  login: (user: User, authType?: 'email' | 'google' | 'yandex') => void
   logout: () => void
 }
 
@@ -66,9 +66,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  const login = (userData: User, authType: 'email' = 'email') => {
-    // Для демо режима принимаем любого пользователя
-    // В продакшене можно добавить проверки ALLOWED_EMAILS
+  const login = (userData: User, authType?: 'email' | 'google' | 'yandex') => {
+    // Проверяем разрешенные email только для обычной авторизации
     if (authType === 'email' && ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(userData.username || '')) {
       throw new Error('Доступ запрещен. Ваш email не в списке разрешенных.')
     }
@@ -78,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Сохраняем в localStorage с указанием типа авторизации
     localStorage.setItem('denta_user', JSON.stringify(userData))
     localStorage.setItem('denta_auth_timestamp', Date.now().toString())
-    localStorage.setItem('denta_auth_type', authType)
+    localStorage.setItem('denta_auth_type', authType || 'email')
   }
 
   const logout = async () => {
