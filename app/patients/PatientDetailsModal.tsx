@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import { handleUpdatePatient, handleDeletePatient } from './actions'
 import { ToastManager } from './Toast'
 import { useAuth } from '../contexts/AuthContext'
-import { DOCTORS, NURSES, PATIENT_STATUSES } from '../../lib/constants'
+import { PATIENT_STATUSES } from '../../lib/constants'
+import { useConstants } from '../hooks/useConstants'
 
 interface PatientDetailsModalProps {
   patient: Record<string, any> // Теперь patient содержит "чистые" строковые данные
@@ -16,6 +17,7 @@ interface PatientDetailsModalProps {
 
 export function PatientDetailsModal({ patient, isOpen, onClose, rowIndex }: PatientDetailsModalProps) {
   const { user } = useAuth()
+  const { doctors, nurses } = useConstants()
   const [isEditMode, setIsEditMode] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -337,7 +339,7 @@ export function PatientDetailsModal({ patient, isOpen, onClose, rowIndex }: Pati
                 }`}
               >
                 <option value="">Выберите врача</option>
-                {DOCTORS.map(doctor => (
+                {doctors.map(doctor => (
                   <option key={doctor} value={doctor}>{doctor}</option>
                 ))}
               </select>
@@ -359,7 +361,7 @@ export function PatientDetailsModal({ patient, isOpen, onClose, rowIndex }: Pati
                 }`}
               >
                 <option value="">Выберите медсестру</option>
-                {NURSES.map(nurse => (
+                {nurses.map(nurse => (
                   <option key={nurse} value={nurse}>{nurse}</option>
                 ))}
               </select>

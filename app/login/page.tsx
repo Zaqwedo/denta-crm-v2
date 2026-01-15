@@ -86,7 +86,7 @@ export default function LoginPage() {
 
       if (response.ok && data.success) {
         // Cookie устанавливается на сервере в /api/auth/login, не нужно устанавливать на клиенте
-        login({ id: 1, first_name: 'Admin', username: 'admin', last_name: '' })
+        login({ id: 1, first_name: 'Admin', username: 'admin', last_name: '' }, 'email')
         router.push('/patients')
       } else {
         setError(data.error || 'Ошибка входа')

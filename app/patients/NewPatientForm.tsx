@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { handleAddPatient } from './actions'
 import { useAuth } from '../contexts/AuthContext'
-import { DOCTORS, NURSES, PATIENT_STATUSES } from '../../lib/constants'
+import { PATIENT_STATUSES } from '../../lib/constants'
+import { useConstants } from '../hooks/useConstants'
 
 // Функция для форматирования телефона с маской
 function formatPhone(value: string): string {
@@ -25,6 +26,7 @@ function formatPhone(value: string): string {
 
 export function NewPatientForm() {
   const { user } = useAuth()
+  const { doctors, nurses } = useConstants()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -194,7 +196,7 @@ export function NewPatientForm() {
           className="w-full px-5 py-4 text-lg border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
         >
           <option value="">Выберите врача</option>
-          {DOCTORS.map(doctor => (
+          {doctors.map(doctor => (
             <option key={doctor} value={doctor}>{doctor}</option>
           ))}
         </select>
@@ -209,7 +211,7 @@ export function NewPatientForm() {
           className="w-full px-5 py-4 text-lg border border-gray-300 rounded-[14px] focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
         >
           <option value="">Выберите медсестру</option>
-          {NURSES.map(nurse => (
+          {nurses.map(nurse => (
             <option key={nurse} value={nurse}>{nurse}</option>
           ))}
         </select>

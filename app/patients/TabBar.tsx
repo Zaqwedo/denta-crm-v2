@@ -97,10 +97,28 @@ const LogOutIcon = ({ size = 24, className = '' }: { size?: number; className?: 
   </svg>
 )
 
+const AdminIcon = ({ size = 24, className = '' }: { size?: number; className?: string }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    className={className}
+  >
+    <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+    <path d="M2 17l10 5 10-5"></path>
+    <path d="M2 12l10 5 10-5"></path>
+  </svg>
+)
+
 export function TabBar() {
   const pathname = usePathname()
   const router = useRouter()
-  const { logout, user } = useAuth()
+  const { logout, user, authType } = useAuth()
 
   const handleLogout = () => {
     logout()
@@ -114,6 +132,9 @@ export function TabBar() {
   if (process.env.NODE_ENV === 'development') {
     console.log('📍 TabBar pathname:', pathname, 'normalized:', normalizedPathname)
   }
+
+  // Показываем кнопку админ панели только для пользователей, вошедших через пароль (email)
+  const showAdminButton = authType === 'email'
 
   const tabs = [
     {
@@ -134,6 +155,12 @@ export function TabBar() {
       icon: ChangesIcon,
       active: normalizedPathname === '/patients/changes' || normalizedPathname.startsWith('/patients/changes/')
     },
+    ...(showAdminButton ? [{
+      name: 'Админ',
+      href: '/admin/dashboard',
+      icon: AdminIcon,
+      active: normalizedPathname === '/admin/dashboard' || normalizedPathname.startsWith('/admin/')
+    }] : []),
     {
       name: 'Выход',
       href: '#', // Не ведет на фактическую страницу, просто для обработки onClick

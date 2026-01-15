@@ -6,7 +6,8 @@ import { handleUpdatePatient, handleDeletePatient } from '../actions'
 import { useAuth } from '../../contexts/AuthContext'
 import { TabBar } from '../TabBar'
 import { ProtectedRoute } from '../../components/ProtectedRoute'
-import { DOCTORS, NURSES, PATIENT_STATUSES } from '../../../lib/constants'
+import { PATIENT_STATUSES } from '../../../lib/constants'
+import { useConstants } from '../../hooks/useConstants'
 
 interface PatientViewClientProps {
   patient: Record<string, any> | null
@@ -16,6 +17,7 @@ interface PatientViewClientProps {
 export function PatientViewClient({ patient: initialPatient, error: initialError }: PatientViewClientProps) {
   const router = useRouter()
   const { user } = useAuth()
+  const { doctors, nurses } = useConstants()
   const patientId = initialPatient?.id ? String(initialPatient.id) : ''
 
   const [isEditMode, setIsEditMode] = useState(false)
@@ -301,7 +303,7 @@ export function PatientViewClient({ patient: initialPatient, error: initialError
                   style={{ width: '100%' }}
                 >
                   <option value="">Выберите врача</option>
-                  {DOCTORS.map(doctor => (
+                  {doctors.map(doctor => (
                     <option key={doctor} value={doctor}>{doctor}</option>
                   ))}
                 </select>
@@ -324,7 +326,7 @@ export function PatientViewClient({ patient: initialPatient, error: initialError
                   style={{ width: '100%' }}
                 >
                   <option value="">Выберите медсестру</option>
-                  {NURSES.map(nurse => (
+                  {nurses.map(nurse => (
                     <option key={nurse} value={nurse}>{nurse}</option>
                   ))}
                 </select>

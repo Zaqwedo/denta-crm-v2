@@ -1,28 +1,46 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuth } from '../contexts/AuthContext'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 
-// Разрешенные Email адреса для авторизации
-const ALLOWED_YANDEX_EMAILS: string[] = [
-  'vladosabramov@yandex.ru'
-]
-
-const ALLOWED_GOOGLE_EMAILS: string[] = [
-  // Добавьте разрешенные email адреса для Google авторизации
-  // Например: 'user@gmail.com', 'admin@gmail.com'
-  "vitaliksport79@gmail.com",
-  "analystbeyondtaylor@gmail.com",
-  "workmail.abramov@gmail.com"
-]
-
 export function GoogleAuthHandler() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const { login } = useAuth()
+  const [allowedYandexEmails, setAllowedYandexEmails] = useState<string[]>([])
+  const [allowedGoogleEmails, setAllowedGoogleEmails] = useState<string[]>([])
+
+  // Загружаем белые списки из API
+  useEffect(() => {
+    const loadWhitelists = async () => {
+      try {
+        const [yandexRes, googleRes] = await Promise.all([
+          fetch('/api/whitelist?provider=yandex'),
+          fetch('/api/whitelist?provider=google'),
+        ])
+
+        if (yandexRes.ok) {
+          const data = await yandexRes.json()
+          setAllowedYandexEmails(data.emails || [])
+        }
+
+        if (googleRes.ok) {
+          const data = await googleRes.json()
+          setAllowedGoogleEmails(data.emails || [])
+        }
+      } catch (error) {
+        console.error('Error loading whitelists:', error)
+        // Fallback к статическим спискам при ошибке
+        setAllowedYandexEmails(['vladosabramov@yandex.ru'])
+        setAllowedGoogleEmails([])
+      }
+    }
+
+    loadWhitelists()
+  }, [])
 
   useEffect(() => {
     if (!searchParams) return
@@ -38,7 +56,7 @@ export function GoogleAuthHandler() {
 
           // Проверяем разрешенные email для Google
           const userEmail = userData.email || userData.username
-          if (ALLOWED_GOOGLE_EMAILS.length > 0 && !ALLOWED_GOOGLE_EMAILS.includes(userEmail)) {
+          if (allowedGoogleEmails.length > 0 && !allowedGoogleEmails.includes(userEmail)) {
             console.error('❌ GoogleAuthHandler: Email не в списке разрешенных:', userEmail)
             // Перенаправляем на login с ошибкой
             window.location.href = '/login?error=google_email_not_allowed'
@@ -98,9 +116,9 @@ export function GoogleAuthHandler() {
           // Проверяем разрешенные email для Yandex
           const userEmail = userData.email || userData.username
           console.log('🔄 YandexAuthHandler: userEmail:', userEmail)
-          console.log('🔄 YandexAuthHandler: ALLOWED_YANDEX_EMAILS:', ALLOWED_YANDEX_EMAILS)
+          console.log('🔄 YandexAuthHandler: allowedYandexEmails:', allowedYandexEmails)
           
-          if (ALLOWED_YANDEX_EMAILS.length > 0 && !ALLOWED_YANDEX_EMAILS.includes(userEmail)) {
+          if (allowedYandexEmails.length > 0 && !allowedYandexEmails.includes(userEmail)) {
             console.error('❌ YandexAuthHandler: Email не в списке разрешенных:', userEmail)
             // Перенаправляем на login с ошибкой
             window.location.href = '/login?error=yandex_email_not_allowed'
@@ -146,7 +164,7 @@ export function GoogleAuthHandler() {
 
       handleYandexAuth()
     }
-  }, [searchParams, login, router])
+  }, [searchParams, login, router, allowedGoogleEmails, allowedYandexEmails])
 
   return null
 }

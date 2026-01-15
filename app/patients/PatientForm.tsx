@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { handleAddPatient } from './actions'
 import { useAuth } from '../contexts/AuthContext'
-import { DOCTORS, NURSES, PATIENT_STATUSES } from '../../lib/constants'
+import { PATIENT_STATUSES } from '../../lib/constants'
+import { useConstants } from '../hooks/useConstants'
 
 // Функция для форматирования телефона с маской
 function formatPhone(value: string): string {
@@ -40,6 +41,7 @@ export function PatientForm({ isOpen: isOpenProp, onClose: onCloseProp, initialD
   isModal?: boolean
 }) {
   const { user } = useAuth()
+  const { doctors, nurses } = useConstants()
   const [isOpenInternal, setIsOpenInternal] = useState(false)
   const isOpen = isModal ? isOpenProp : isOpenInternal
   const onClose = isModal ? onCloseProp : () => setIsOpenInternal(false)
@@ -235,7 +237,7 @@ export function PatientForm({ isOpen: isOpenProp, onClose: onCloseProp, initialD
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   >
                     <option value="">Выберите врача</option>
-                    {DOCTORS.map(doctor => (
+                    {doctors.map(doctor => (
                       <option key={doctor} value={doctor}>{doctor}</option>
                     ))}
                   </select>
@@ -251,7 +253,7 @@ export function PatientForm({ isOpen: isOpenProp, onClose: onCloseProp, initialD
                     className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
                   >
                     <option value="">Выберите медсестру</option>
-                    {NURSES.map(nurse => (
+                    {nurses.map(nurse => (
                       <option key={nurse} value={nurse}>{nurse}</option>
                     ))}
                   </select>

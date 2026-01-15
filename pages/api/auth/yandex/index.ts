@@ -30,10 +30,10 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     client_id: process.env.YANDEX_CLIENT_ID,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'login:email',  // Минимальный scope для теста, можно добавить login:info позже
+    scope: 'login:email login:info',  // Полный scope для получения email и информации о пользователе
   })
   
-  console.log('  - scope:', 'login:email')
+  console.log('  - scope:', 'login:email login:info')
 
   const authUrl = `https://oauth.yandex.com/authorize?${params.toString()}`
   return res.redirect(authUrl)

@@ -24,6 +24,7 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
+  authType: 'email' | 'google' | 'yandex' | 'vk' | 'telegram' | null
   login: (user: User, authType?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => void
   logout: () => void
 }
@@ -33,6 +34,25 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined)
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
+  const [authType, setAuthType] = useState<'email' | 'google' | 'yandex' | 'vk' | 'telegram' | null>(null)
+  const [allowedEmails, setAllowedEmails] = useState<string[]>([])
+
+  // Загружаем белый список для email авторизации
+  useEffect(() => {
+    const loadEmailWhitelist = async () => {
+      try {
+        const response = await fetch('/api/whitelist?provider=email')
+        if (response.ok) {
+          const data = await response.json()
+          setAllowedEmails(data.emails || [])
+        }
+      } catch (error) {
+        console.error('Error loading email whitelist:', error)
+      }
+    }
+
+    loadEmailWhitelist()
+  }, [])
 
   useEffect(() => {
     // Проверяем сохраненную сессию при загрузке
@@ -40,6 +60,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       try {
         const savedUser = localStorage.getItem('denta_user')
         const savedTimestamp = localStorage.getItem('denta_auth_timestamp')
+        const savedAuthType = localStorage.getItem('denta_auth_type') as 'email' | 'google' | 'yandex' | 'vk' | 'telegram' | null
 
         if (savedUser && savedTimestamp) {
           const userData = JSON.parse(savedUser)
@@ -50,6 +71,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (now - timestamp < 7 * 24 * 60 * 60 * 1000) {
             // Для демо режима принимаем сохраненную сессию
             setUser(userData)
+            setAuthType(savedAuthType || 'email')
           } else {
             // Сессия истекла
             logout()
@@ -66,25 +88,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  const login = (userData: User, authType?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => {
-    // Для демо режима принимаем любого пользователя
-    // В продакшене можно добавить проверки ALLOWED_EMAILS только для email входа
-    if (authType === 'email' && ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(userData.username || '')) {
+  const login = (userData: User, authTypeParam?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => {
+    const finalAuthType = authTypeParam || 'email'
+    
+    // Проверяем белый список только для email авторизации
+    if (finalAuthType === 'email' && allowedEmails.length > 0 && !allowedEmails.includes(userData.username || '')) {
       throw new Error('Доступ запрещен. Ваш email не в списке разрешенных.')
     }
 
     setUser(userData)
+    setAuthType(finalAuthType)
 
     // Сохраняем в localStorage с указанием типа авторизации
     localStorage.setItem('denta_user', JSON.stringify(userData))
     localStorage.setItem('denta_auth_timestamp', Date.now().toString())
-    localStorage.setItem('denta_auth_type', authType || 'email')
+    localStorage.setItem('denta_auth_type', finalAuthType)
   }
 
   const logout = async () => {
     setUser(null)
+    setAuthType(null)
     localStorage.removeItem('denta_user')
     localStorage.removeItem('denta_auth_timestamp')
+    localStorage.removeItem('denta_auth_type')
 
     // Выходим из Supabase
     await supabase.auth.signOut()
@@ -94,6 +120,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     user,
     isAuthenticated: !!user,
     isLoading,
+    authType,
     login,
     logout
   }
