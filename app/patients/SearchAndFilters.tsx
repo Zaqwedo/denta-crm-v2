@@ -50,6 +50,34 @@ export function SearchAndFilters({ patients, onFilteredPatientsChange }: SearchA
     return Array.from(unique).sort()
   }, [patients])
 
+  // Функция для парсинга даты из разных форматов
+  const parseDate = (dateStr: string | null): Date | null => {
+    if (!dateStr) return null
+    
+    // Пробуем разные форматы
+    // Формат DD.MM.YYYY
+    const ddmmyyyy = dateStr.match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/)
+    if (ddmmyyyy) {
+      const [, day, month, year] = ddmmyyyy
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    }
+    
+    // Формат YYYY-MM-DD
+    const yyyymmdd = dateStr.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/)
+    if (yyyymmdd) {
+      const [, year, month, day] = yyyymmdd
+      return new Date(parseInt(year), parseInt(month) - 1, parseInt(day))
+    }
+    
+    // Пробуем стандартный парсинг
+    const parsed = new Date(dateStr)
+    if (!isNaN(parsed.getTime())) {
+      return parsed
+    }
+    
+    return null
+  }
+
   // Фильтрация и сортировка пациентов
   const filteredPatients = useMemo(() => {
     const filtered = patients.filter(patient => {
@@ -73,13 +101,16 @@ export function SearchAndFilters({ patients, onFilteredPatientsChange }: SearchA
     // Сортировка по дате записи (от новых к старым)
     // Записи без даты помещаются в конец
     return filtered.sort((a, b) => {
+      const dateA = parseDate(a.date)
+      const dateB = parseDate(b.date)
+      
       // Если у обоих есть даты, сравниваем их
-      if (a.date && b.date) {
-        return b.date.localeCompare(a.date) // Обратный порядок (от новых к старым)
+      if (dateA && dateB) {
+        return dateB.getTime() - dateA.getTime() // Обратный порядок (от новых к старым)
       }
       // Если только у одного есть дата, он идет первым
-      if (a.date && !b.date) return -1
-      if (!a.date && b.date) return 1
+      if (dateA && !dateB) return -1
+      if (!dateA && dateB) return 1
       // Если у обоих нет даты, сохраняем исходный порядок
       return 0
     })

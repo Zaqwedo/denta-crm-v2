@@ -46,8 +46,7 @@ export async function getPatients(): Promise<PatientData[]> {
     
     const { data, error } = await supabase
       .from('patients')
-      .select('*')
-      .order('Дата записи', { ascending: false, nullsFirst: false });
+      .select('*');
 
     if (error) {
       logger.error('Ошибка при получении данных пациентов из Supabase:', error);
