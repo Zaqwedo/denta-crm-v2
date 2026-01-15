@@ -14,6 +14,7 @@ const ALLOWED_EMAILS: string[] = [
 const ALLOWED_YANDEX_EMAILS: string[] = [
   // Добавьте разрешенные email адреса для Yandex авторизации
   // Например: 'user@yandex.ru', 'admin@yandex.com'
+    "vladosabramov@yandex.ru"
 ]
 
 export interface User {

@@ -140,6 +140,7 @@ export default async function handler(
       first_name: userData.first_name || userData.real_name || 'User',
       last_name: userData.last_name || '',
       username: userData.login || userData.default_email || '',
+      email: userData.default_email || userData.login || '',
       photo_url: userData.default_avatar_id ? `https://avatars.yandex.net/get-yapic/${userData.default_avatar_id}/islands-200` : '',
     }
 

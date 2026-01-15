@@ -60,9 +60,6 @@ YANDEX_CLIENT_ID=your-yandex-client-id
 YANDEX_CLIENT_SECRET=your-yandex-client-secret
 YANDEX_REDIRECT_URI=https://your-domain.vercel.app/api/auth/yandex/callback
 
-# Email Access Control (опционально)
-# ALLOWED_EMAILS=admin@example.com,user@example.com  # для обычной авторизации
-# ALLOWED_YANDEX_EMAILS=user@yandex.ru,admin@yandex.com  # для Yandex OAuth
 
 # Application
 APP_URL=http://localhost:3000
@@ -74,7 +71,15 @@ APP_URL=http://localhost:3000
 2. Выполните SQL скрипт `supabase-setup-rls.sql` в SQL Editor
 3. Настройте Row Level Security (RLS) политики
 
-### 5. Настройка Google OAuth
+### 5. Настройка безопасности и доступа
+
+Для ограничения доступа настройте белые списки email (подробно описано в разделе "Безопасность и управление доступом"):
+
+1. Откройте `app/contexts/AuthContext.tsx`
+2. Добавьте разрешенные email в `ALLOWED_EMAILS`
+3. Для Yandex OAuth настройте `ALLOWED_YANDEX_EMAILS` в `app/patients/GoogleAuthHandler.tsx`
+
+### 6. Настройка Google OAuth
 
 1. Перейдите в [Google Cloud Console](https://console.cloud.google.com)
 2. Создайте новый проект или выберите существующий
@@ -92,7 +97,7 @@ APP_URL=http://localhost:3000
    - `https://ваш-домен.vercel.app/api/auth/google/callback` (для продакшена)
 8. Скопируйте `Client ID` и `Client Secret`
 
-### 6. Настройка Yandex OAuth
+### 7. Настройка Yandex OAuth
 
 1. Перейдите в [Yandex OAuth](https://oauth.yandex.com)
 2. Создайте новое приложение
@@ -103,15 +108,9 @@ APP_URL=http://localhost:3000
    - **Продакшн**: `https://ваш-домен.vercel.app/api/auth/yandex/callback`
 6. Скопируйте `Client ID` и `Client Secret`
 7. Добавьте переменную `YANDEX_REDIRECT_URI` в Vercel (продакшн URL)
-8. **Опционально**: Настройте список разрешенных email в `app/contexts/AuthContext.tsx`:
-   ```typescript
-   const ALLOWED_YANDEX_EMAILS: string[] = [
-     'user@yandex.ru',
-     'admin@yandex.com'
-   ]
-   ```
+8. **Рекомендация**: Настройте белый список email для безопасности (см. раздел "Безопасность и управление доступом")
 
-### 7. Запуск приложения
+### 8. Запуск приложения
 ```bash
 npm run dev
 ```
