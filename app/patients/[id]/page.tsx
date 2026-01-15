@@ -14,18 +14,62 @@ export default async function PatientViewPage({ params }: { params: Promise<{ id
     }
 
     // Преобразуем данные в формат, который ожидает форма
+    // Используем case-insensitive поиск полей для надежности
+    const getFieldValue = (obj: Record<string, any>, fieldName: string): string => {
+      // Сначала пробуем прямое обращение (самый надежный способ)
+      if (obj[fieldName] !== undefined && obj[fieldName] !== null) {
+        return String(obj[fieldName])
+      }
+      
+      // Затем пробуем case-insensitive поиск
+      const key = Object.keys(obj).find(
+        k => k.toLowerCase() === fieldName.toLowerCase()
+      )
+      if (key && obj[key] !== undefined && obj[key] !== null) {
+        return String(obj[key])
+      }
+      
+      return ''
+    }
+
     const cleanPatient = {
       id: found.id || 'без id',
-      name: found.ФИО || 'Без имени',
-      phone: found.Телефон || '',
-      date: found['Дата записи'] || '',
-      time: found['Время записи'] || '',
-      doctor: found.Доктор || '',
-      status: found.Статус || '',
-      comments: found.Комментарии || '',
-      birthDate: found['Дата рождения пациента'] || '',
-      teeth: found.Зубы || '',
-      nurse: found.Медсестра || '',
+      name: getFieldValue(found, 'ФИО') || 'Без имени',
+      phone: getFieldValue(found, 'Телефон'),
+      date: getFieldValue(found, 'Дата записи'),
+      time: getFieldValue(found, 'Время записи'),
+      doctor: getFieldValue(found, 'Доктор'),
+      status: getFieldValue(found, 'Статус'),
+      comments: getFieldValue(found, 'Комментарии'),
+      birthDate: getFieldValue(found, 'Дата рождения пациента'),
+      teeth: getFieldValue(found, 'Зубы'),
+      nurse: getFieldValue(found, 'Медсестра'),
+    }
+
+    // Отладочное логирование (только в development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 PatientViewPage: Найден пациент:', {
+        id: cleanPatient.id,
+        name: cleanPatient.name,
+        date: cleanPatient.date,
+        doctor: cleanPatient.doctor,
+        nurse: cleanPatient.nurse,
+        time: cleanPatient.time,
+        'Исходные данные из БД (прямое обращение)': {
+          'ФИО': found.ФИО,
+          'Дата записи': found['Дата записи'],
+          'Доктор': found.Доктор,
+          'Медсестра': found.Медсестра,
+          'Время записи': found['Время записи'],
+        },
+        'Все ключи объекта found': Object.keys(found),
+        'Значения всех полей': Object.entries(found).reduce((acc, [key, value]) => {
+          if (key.toLowerCase().includes('доктор') || key.toLowerCase().includes('врач')) {
+            acc[key] = value
+          }
+          return acc
+        }, {} as Record<string, any>)
+      })
     }
 
     return <PatientViewClient patient={cleanPatient} error={null} />

@@ -98,7 +98,7 @@ export function SearchAndFilters({ patients, onFilteredPatientsChange }: SearchA
       return matchesSearch && matchesDoctor && matchesNurse && matchesStatus
     })
 
-    // Сортировка по дате записи (от новых к старым)
+    // Сортировка по дате и времени приёма (desc - от новых к старым)
     // Записи без даты помещаются в конец
     return filtered.sort((a, b) => {
       const dateA = parseDate(a.date)
@@ -106,7 +106,28 @@ export function SearchAndFilters({ patients, onFilteredPatientsChange }: SearchA
       
       // Если у обоих есть даты, сравниваем их
       if (dateA && dateB) {
-        return dateB.getTime() - dateA.getTime() // Обратный порядок (от новых к старым)
+        // Сначала сравниваем даты
+        const dateDiff = dateB.getTime() - dateA.getTime()
+        
+        // Если даты одинаковые, сравниваем время
+        if (dateDiff === 0 && a.time && b.time) {
+          // Парсим время в формате HH:MM или HH:MM:SS
+          const parseTime = (timeStr: string): number => {
+            const parts = timeStr.split(':')
+            if (parts.length >= 2) {
+              const hours = parseInt(parts[0]) || 0
+              const minutes = parseInt(parts[1]) || 0
+              return hours * 60 + minutes // Конвертируем в минуты для сравнения
+            }
+            return 0
+          }
+          
+          const timeA = parseTime(a.time)
+          const timeB = parseTime(b.time)
+          return timeB - timeA // Более позднее время идет первым
+        }
+        
+        return dateDiff // Обратный порядок (от новых к старым)
       }
       // Если только у одного есть дата, он идет первым
       if (dateA && !dateB) return -1

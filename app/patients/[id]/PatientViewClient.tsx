@@ -26,10 +26,38 @@ export function PatientViewClient({ patient: initialPatient, error: initialError
   const [error, setError] = useState<string | null>(initialError)
   const nameInputRef = useRef<HTMLInputElement>(null)
 
+  // Отладочное логирование (только в development)
+  if (process.env.NODE_ENV === 'development' && initialPatient) {
+    console.log('🔍 PatientViewClient: Получены данные пациента:', {
+      id: initialPatient.id,
+      name: initialPatient.name,
+      date: initialPatient.date,
+      doctor: initialPatient.doctor,
+      'doctor type': typeof initialPatient.doctor,
+      'doctor length': initialPatient.doctor?.length,
+      'doctor truthy': !!initialPatient.doctor,
+      nurse: initialPatient.nurse,
+      time: initialPatient.time,
+      phone: initialPatient.phone,
+      'Все поля initialPatient': initialPatient,
+    })
+  }
+
   // Форматируем дату для input type="date"
   const formattedDate = initialPatient?.date ? (() => {
     try {
-      const dateObj = new Date(initialPatient.date)
+      const dateStr = initialPatient.date
+      // Если дата в формате DD.MM.YYYY, преобразуем в YYYY-MM-DD
+      if (dateStr.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) {
+        const [day, month, year] = dateStr.split('.')
+        return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+      }
+      // Если дата уже в формате YYYY-MM-DD, возвращаем как есть
+      if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+        return dateStr
+      }
+      // Пробуем стандартное преобразование
+      const dateObj = new Date(dateStr)
       if (!isNaN(dateObj.getTime())) {
         return dateObj.toISOString().split('T')[0]
       }
@@ -37,17 +65,30 @@ export function PatientViewClient({ patient: initialPatient, error: initialError
     return initialPatient.date
   })() : ''
 
-  const [formData, setFormData] = useState({
-    name: initialPatient?.name || '',
-    phone: initialPatient?.phone || '',
-    date: formattedDate,
-    time: initialPatient?.time || '',
-    doctor: initialPatient?.doctor || '',
-    status: initialPatient?.status || '',
-    comments: initialPatient?.comments || '',
-    birthDate: initialPatient?.birthDate || '',
-    teeth: initialPatient?.teeth || '',
-    nurse: initialPatient?.nurse || '',
+  const [formData, setFormData] = useState(() => {
+    const data = {
+      name: initialPatient?.name || '',
+      phone: initialPatient?.phone || '',
+      date: formattedDate,
+      time: initialPatient?.time || '',
+      doctor: initialPatient?.doctor || '',
+      status: initialPatient?.status || '',
+      comments: initialPatient?.comments || '',
+      birthDate: initialPatient?.birthDate || '',
+      teeth: initialPatient?.teeth || '',
+      nurse: initialPatient?.nurse || '',
+    }
+    
+    // Отладочное логирование (только в development)
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 PatientViewClient: Инициализация formData:', {
+        doctor: data.doctor,
+        'doctor from initialPatient': initialPatient?.doctor,
+        'all formData': data,
+      })
+    }
+    
+    return data
   })
 
   useEffect(() => {
@@ -57,6 +98,45 @@ export function PatientViewClient({ patient: initialPatient, error: initialError
       }, 100)
     }
   }, [isEditMode])
+
+  // Обновляем formData при изменении initialPatient (например, после обновления данных)
+  useEffect(() => {
+    if (initialPatient && !isEditMode) {
+      const newFormattedDate = initialPatient?.date ? (() => {
+        try {
+          const dateStr = initialPatient.date
+          // Если дата в формате DD.MM.YYYY, преобразуем в YYYY-MM-DD
+          if (dateStr.match(/^\d{1,2}\.\d{1,2}\.\d{4}$/)) {
+            const [day, month, year] = dateStr.split('.')
+            return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`
+          }
+          // Если дата уже в формате YYYY-MM-DD, возвращаем как есть
+          if (dateStr.match(/^\d{4}-\d{2}-\d{2}$/)) {
+            return dateStr
+          }
+          // Пробуем стандартное преобразование
+          const dateObj = new Date(dateStr)
+          if (!isNaN(dateObj.getTime())) {
+            return dateObj.toISOString().split('T')[0]
+          }
+        } catch (e) {}
+        return initialPatient.date
+      })() : ''
+
+      setFormData({
+        name: initialPatient.name || '',
+        phone: initialPatient.phone || '',
+        date: newFormattedDate,
+        time: initialPatient.time || '',
+        doctor: initialPatient.doctor || '',
+        status: initialPatient.status || '',
+        comments: initialPatient.comments || '',
+        birthDate: initialPatient.birthDate || '',
+        teeth: initialPatient.teeth || '',
+        nurse: initialPatient.nurse || '',
+      })
+    }
+  }, [initialPatient, isEditMode])
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault()
@@ -306,7 +386,17 @@ export function PatientViewClient({ patient: initialPatient, error: initialError
                   {doctors.map(doctor => (
                     <option key={doctor} value={doctor}>{doctor}</option>
                   ))}
+                  {/* Если значение врача не в списке, добавляем его как опцию */}
+                  {formData.doctor && !doctors.includes(formData.doctor) && (
+                    <option value={formData.doctor}>{formData.doctor}</option>
+                  )}
                 </select>
+                {/* Показываем предупреждение, если значение не в списке */}
+                {formData.doctor && !doctors.includes(formData.doctor) && (
+                  <p className="mt-2 text-sm text-yellow-600">
+                    ⚠️ Врач "{formData.doctor}" не найден в списке доступных врачей
+                  </p>
+                )}
               </div>
 
               <div>
