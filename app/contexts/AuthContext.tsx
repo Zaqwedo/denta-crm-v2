@@ -66,9 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  const login = (userData: User, authType: 'email' = 'email') => {
+  const login = (userData: User, authType?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => {
     // Для демо режима принимаем любого пользователя
-    // В продакшене можно добавить проверки ALLOWED_EMAILS
+    // В продакшене можно добавить проверки ALLOWED_EMAILS только для email входа
     if (authType === 'email' && ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(userData.username || '')) {
       throw new Error('Доступ запрещен. Ваш email не в списке разрешенных.')
     }
