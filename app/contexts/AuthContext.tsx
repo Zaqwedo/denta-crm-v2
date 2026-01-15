@@ -78,7 +78,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Сохраняем в localStorage с указанием типа авторизации
     localStorage.setItem('denta_user', JSON.stringify(userData))
     localStorage.setItem('denta_auth_timestamp', Date.now().toString())
-    localStorage.setItem('denta_auth_type', authType)
+    localStorage.setItem('denta_auth_type', authType || 'email')
   }
 
   const logout = async () => {
