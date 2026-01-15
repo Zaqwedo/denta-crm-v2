@@ -8,14 +8,15 @@ import { supabase } from '@/lib/supabase'
 
 // Разрешенные Email адреса для авторизации
 const ALLOWED_YANDEX_EMAILS: string[] = [
-  'ladosabramov@yandex.ru'
+  'vladosabramov@yandex.ru'
 ]
 
 const ALLOWED_GOOGLE_EMAILS: string[] = [
   // Добавьте разрешенные email адреса для Google авторизации
   // Например: 'user@gmail.com', 'admin@gmail.com'
   "vitaliksport79@gmail.com",
-  "analystbeyondtaylor@gmail.com"
+  "analystbeyondtaylor@gmail.com",
+  "workmail.abramov@gmail.com"
 ]
 
 export function GoogleAuthHandler() {
