@@ -89,8 +89,8 @@ export function GoogleAuthHandler() {
       const handleYandexAuth = async () => {
         try {
           console.log('🔄 YandexAuthHandler: Начинаю обработку данных пользователя')
-          console.log('🔄 YandexAuthHandler: userData:', userData)
           const userData = JSON.parse(yandexUserParam)
+          console.log('🔄 YandexAuthHandler: userData:', userData)
 
           // Проверяем разрешенные email для Yandex
           const userEmail = userData.email || userData.username
