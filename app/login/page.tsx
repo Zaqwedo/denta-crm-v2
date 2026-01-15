@@ -52,7 +52,7 @@ export default function LoginPage() {
         } else if (errorParam === 'yandex_oauth_error') {
           setError('Ошибка авторизации через Яндекс. Попробуйте еще раз.')
         } else if (errorParam === 'yandex_email_not_allowed') {
-          setError('Доступ запрещен. Ваш Yandex аккаунт не в списке разрешенных.')
+          setError('Доступ ограничен. Пожалуйста, обратитесь к администратору для добавления вашего Yandex аккаунта в список разрешенных пользователей.')
         } else {
           setError(decodeURIComponent(errorParam))
         }
