@@ -141,12 +141,9 @@ export default function LoginPage() {
                 console.error('Yandex OAuth error:', err)
               }
             }}
-            className="w-full bg-[#FF0000] hover:bg-[#CC0000] text-white font-semibold py-4 rounded-xl transition-all flex items-center justify-center gap-3 shadow-sm hover:shadow-md mb-3"
+            className="w-full bg-[#FF0000] hover:bg-[#CC0000] text-white font-semibold py-4 rounded-xl transition-all flex items-center justify-center shadow-sm hover:shadow-md mb-3"
           >
-            <svg className="w-6 h-6" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M13.5 0C17.1 0 20 2.9 20 6.5c0 2.7-1.6 5-4 6.1-.6.3-1.2.4-1.9.4-.7 0-1.4-.1-2-.4-2.4-1.1-4-3.4-4-6.1C4 2.9 6.9 0 10.5 0c.7 0 1.4.1 2 .4C13.1.1 13.8 0 14.5 0c.7 0 1.4.1 2 .4C17.1.1 17.8 0 18.5 0c.7 0 1.4.1 2 .4 2.4 1.1 4 3.4 4 6.1 0 3.6-2.9 6.5-6.5 6.5-.7 0-1.4-.1-2-.4-2.4-1.1-4-3.4-4-6.1 0-3.6 2.9-6.5 6.5-6.5z"/>
-            </svg>
-            <span>Войти через Яндекс</span>
+            Войти через Яндекс
           </button>
 
           {/* Разделитель */}
