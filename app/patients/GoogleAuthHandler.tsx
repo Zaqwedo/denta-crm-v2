@@ -6,16 +6,6 @@ import { useAuth } from '../contexts/AuthContext'
 import { logger } from '@/lib/logger'
 import { supabase } from '@/lib/supabase'
 
-// Разрешенные Email адреса для авторизации
-const ALLOWED_YANDEX_EMAILS: string[] = [
-  'vladosabramov@yandex.ru'
-]
-
-const ALLOWED_GOOGLE_EMAILS: string[] = [
-  // Добавьте разрешенные email адреса для Google авторизации
-  // Например: 'user@gmail.com', 'admin@gmail.com'
-]
-
 export function GoogleAuthHandler() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -23,26 +13,16 @@ export function GoogleAuthHandler() {
 
   useEffect(() => {
     if (!searchParams) return
-
+    
     const googleAuth = searchParams.get('google_auth')
-    const yandexAuth = searchParams.get('yandex_auth')
     const userParam = searchParams.get('user')
 
     if (googleAuth === 'success' && userParam) {
-      const handleGoogleAuth = async () => {
+      const handleAuth = async () => {
         try {
           console.log('🔄 GoogleAuthHandler: Начинаю обработку данных пользователя')
           const userData = JSON.parse(userParam)
-
-          // Проверяем разрешенные email для Google
-          const userEmail = userData.email || userData.username
-          if (ALLOWED_GOOGLE_EMAILS.length > 0 && !ALLOWED_GOOGLE_EMAILS.includes(userEmail)) {
-            console.error('❌ GoogleAuthHandler: Email не в списке разрешенных:', userEmail)
-            // Перенаправляем на login с ошибкой
-            window.location.href = '/login?error=google_email_not_allowed'
-            return
-          }
-
+          
           // Устанавливаем сессию Supabase для RLS
           await supabase.auth.signInAnonymously({
             options: {
@@ -60,16 +40,16 @@ export function GoogleAuthHandler() {
             last_name: userData.last_name || '',
             username: userData.username || userData.email || '',
             photo_url: userData.photo_url || '',
-          }, 'google')
+          }, 'email')
 
           console.log('✅ GoogleAuthHandler: Логин выполнен, очищаю URL')
-
+          
           // Очищаем URL через window.history, чтобы не дергать лишний раз роутер
           const url = new URL(window.location.href)
           url.searchParams.delete('google_auth')
           url.searchParams.delete('user')
           window.history.replaceState({}, '', url.pathname)
-
+          
           // Принудительно обновляем роутер через небольшой таймаут
           setTimeout(() => {
             router.refresh()
@@ -78,23 +58,19 @@ export function GoogleAuthHandler() {
           console.error('❌ GoogleAuthHandler error:', error)
         }
       }
-      handleGoogleAuth()
+
+      handleAuth()
     }
 
-    if (yandexAuth === 'success' && userParam) {
+    // Обработка Yandex
+    const yandexAuth = searchParams.get('yandex_auth')
+    const yandexUserParam = searchParams.get('user')
+
+    if (yandexAuth === 'success' && yandexUserParam) {
       const handleYandexAuth = async () => {
         try {
           console.log('🔄 YandexAuthHandler: Начинаю обработку данных пользователя')
-          const userData = JSON.parse(userParam)
-
-          // Проверяем разрешенные email для Yandex
-          const userEmail = userData.email || userData.username
-          if (ALLOWED_YANDEX_EMAILS.length > 0 && !ALLOWED_YANDEX_EMAILS.includes(userEmail)) {
-            console.error('❌ YandexAuthHandler: Email не в списке разрешенных:', userEmail)
-            // Перенаправляем на login с ошибкой
-            window.location.href = '/login?error=yandex_email_not_allowed'
-            return
-          }
+          const userData = JSON.parse(yandexUserParam)
 
           // Устанавливаем сессию Supabase для RLS
           await supabase.auth.signInAnonymously({
@@ -130,6 +106,7 @@ export function GoogleAuthHandler() {
           console.error('❌ YandexAuthHandler error:', error)
         }
       }
+
       handleYandexAuth()
     }
   }, [searchParams, login, router])

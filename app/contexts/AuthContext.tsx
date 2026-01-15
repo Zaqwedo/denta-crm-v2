@@ -24,7 +24,7 @@ interface AuthContextType {
   user: User | null
   isAuthenticated: boolean
   isLoading: boolean
-  login: (user: User, authType?: 'email' | 'google' | 'yandex') => void
+  login: (user: User, authType?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => void
   logout: () => void
 }
 
@@ -66,8 +66,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     checkAuth()
   }, [])
 
-  const login = (userData: User, authType?: 'email' | 'google' | 'yandex') => {
-    // Проверяем разрешенные email только для обычной авторизации
+  const login = (userData: User, authType?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => {
+    // Для демо режима принимаем любого пользователя
+    // В продакшене можно добавить проверки ALLOWED_EMAILS только для email входа
     if (authType === 'email' && ALLOWED_EMAILS.length > 0 && !ALLOWED_EMAILS.includes(userData.username || '')) {
       throw new Error('Доступ запрещен. Ваш email не в списке разрешенных.')
     }

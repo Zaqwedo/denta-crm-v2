@@ -23,7 +23,7 @@ export default async function handler(
   }
 
   try {
-    // Определяем redirect URI (должен точно совпадать с настройками в Yandex OAuth)
+    // Определяем redirect URI (должен точно совпадать с настройками в Яндекс OAuth)
     let redirectUri: string
 
     if (process.env.NODE_ENV === 'production') {
@@ -54,7 +54,8 @@ export default async function handler(
     })
 
     console.log('📤 Yandex Token exchange request:')
-    console.log('  - client_id:', process.env.YANDEX_CLIENT_ID ? 'set' : 'NOT SET')
+    console.log('  - grant_type: authorization_code')
+    console.log('  - client_id:', process.env.YANDEX_CLIENT_ID)
     console.log('  - redirect_uri:', redirectUri)
     console.log('  - code length:', (code as string)?.length || 0)
 
@@ -69,6 +70,11 @@ export default async function handler(
     const tokenData = await tokenResponse.json()
 
     if (!tokenResponse.ok) {
+      console.error('Yandex token exchange error:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: tokenData
+      })
       console.error('❌ Yandex Token exchange failed:')
       console.error('  - Status:', tokenResponse.status, tokenResponse.statusText)
       console.error('  - Error:', tokenData)
@@ -87,8 +93,8 @@ export default async function handler(
 
     console.log('✅ Yandex Token received:', {
       access_token: tokenData.access_token ? 'present' : 'missing',
-      expires_in: tokenData.expires_in,
-      token_type: tokenData.token_type
+      token_type: tokenData.token_type,
+      expires_in: tokenData.expires_in
     })
 
     // Получаем информацию о пользователе
@@ -101,6 +107,7 @@ export default async function handler(
     const userData = await userResponse.json()
 
     if (!userResponse.ok) {
+      console.error('Yandex user info error:', userData)
       console.error('❌ Yandex User info failed:')
       console.error('  - Status:', userResponse.status, userResponse.statusText)
       console.error('  - Response:', userData)
@@ -133,7 +140,6 @@ export default async function handler(
       first_name: userData.first_name || userData.real_name || 'User',
       last_name: userData.last_name || '',
       username: userData.login || userData.default_email || '',
-      email: userData.default_email || userData.login || '',
       photo_url: userData.default_avatar_id ? `https://avatars.yandex.net/get-yapic/${userData.default_avatar_id}/islands-200` : '',
     }
 
