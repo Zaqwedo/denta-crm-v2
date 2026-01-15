@@ -46,7 +46,8 @@ export async function getPatients(): Promise<PatientData[]> {
     
     const { data, error } = await supabase
       .from('patients')
-      .select('*');
+      .select('*')
+      .order('Дата записи', { ascending: false, nullsFirst: false });
 
     if (error) {
       logger.error('Ошибка при получении данных пациентов из Supabase:', error);
@@ -394,13 +395,13 @@ export async function archiveAndRemovePatient(patientId: string, deletedByEmail:
     }
 
     // 2. Вставляем данные в таблицу deleted_patients
-    // Исключаем id и системные поля, которые могут конфликтовать
-    const { id, created_at, ...patientDataWithoutId } = patient as any;
+    // Исключаем id, created_at, updated_at и другие системные поля, которые могут конфликтовать
+    const { id, created_at, updated_at, ...patientDataWithoutSystemFields } = patient as any;
 
     const { error: insertError } = await supabase
       .from('deleted_patients')
       .insert([{
-        ...patientDataWithoutId,
+        ...patientDataWithoutSystemFields,
         original_id: String(id), // Принудительно в строку
         deleted_by_email: deletedByEmail,
         deleted_at: new Date().toISOString()

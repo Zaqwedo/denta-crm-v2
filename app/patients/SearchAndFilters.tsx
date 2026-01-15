@@ -50,9 +50,9 @@ export function SearchAndFilters({ patients, onFilteredPatientsChange }: SearchA
     return Array.from(unique).sort()
   }, [patients])
 
-  // Фильтрация пациентов
+  // Фильтрация и сортировка пациентов
   const filteredPatients = useMemo(() => {
-    return patients.filter(patient => {
+    const filtered = patients.filter(patient => {
       // Поиск по имени/фамилии
       const matchesSearch = !searchQuery || 
         patient.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -68,6 +68,20 @@ export function SearchAndFilters({ patients, onFilteredPatientsChange }: SearchA
       const matchesStatus = !selectedStatus || patient.status === selectedStatus
 
       return matchesSearch && matchesDoctor && matchesNurse && matchesStatus
+    })
+
+    // Сортировка по дате записи (от новых к старым)
+    // Записи без даты помещаются в конец
+    return filtered.sort((a, b) => {
+      // Если у обоих есть даты, сравниваем их
+      if (a.date && b.date) {
+        return b.date.localeCompare(a.date) // Обратный порядок (от новых к старым)
+      }
+      // Если только у одного есть дата, он идет первым
+      if (a.date && !b.date) return -1
+      if (!a.date && b.date) return 1
+      // Если у обоих нет даты, сохраняем исходный порядок
+      return 0
     })
   }, [patients, searchQuery, selectedDoctor, selectedNurse, selectedStatus])
 
