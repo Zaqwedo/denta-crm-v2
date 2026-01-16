@@ -17,7 +17,13 @@ export async function GET(req: NextRequest) {
       count: normalizedEmails.length
     })
     
-    return NextResponse.json({ emails: normalizedEmails })
+    return NextResponse.json({ emails: normalizedEmails }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    })
   } catch (error) {
     console.error('Get whitelist error:', error)
     return NextResponse.json(

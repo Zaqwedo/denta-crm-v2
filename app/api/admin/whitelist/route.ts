@@ -14,7 +14,24 @@ export async function GET(req: NextRequest) {
     const provider = searchParams.get('provider') as 'google' | 'yandex' | 'email' | null
     
     const emails = await getWhitelistEmails(provider || undefined)
-    return NextResponse.json({ emails })
+    
+    console.log('Admin whitelist API: возвращаем данные', {
+      provider,
+      emailsCount: emails.length,
+      emails: emails.map(e => ({
+        email: e.email,
+        doctors: e.doctors,
+        doctorsCount: e.doctors?.length || 0
+      }))
+    })
+    
+    return NextResponse.json({ emails }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+      },
+    })
   } catch (error) {
     console.error('Get whitelist error:', error)
     return NextResponse.json(

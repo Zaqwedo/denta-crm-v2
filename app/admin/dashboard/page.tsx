@@ -71,11 +71,13 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
+      // Добавляем timestamp для предотвращения кеширования
+      const timestamp = Date.now()
       const [doctorsRes, nursesRes, whitelistRes, usersRes] = await Promise.all([
-        fetch('/api/admin/doctors'),
-        fetch('/api/admin/nurses'),
-        fetch('/api/admin/whitelist'),
-        fetch('/api/admin/users'),
+        fetch(`/api/admin/doctors?t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/admin/nurses?t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/admin/whitelist?t=${timestamp}`, { cache: 'no-store' }),
+        fetch(`/api/admin/users?t=${timestamp}`, { cache: 'no-store' }),
       ])
 
       if (doctorsRes.ok) {
