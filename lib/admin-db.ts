@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase, ensureAnonymousSession } from './supabase'
+import { supabase, ensureAnonymousSession, getSupabaseAdmin } from './supabase'
 import { logger } from './logger'
 
 /**
@@ -345,6 +345,216 @@ export async function deleteWhitelistEmail(email: string): Promise<void> {
     }
   } catch (error) {
     logger.error('Ошибка удаления email из белого списка:', error)
+    throw error
+  }
+}
+
+// ========== ПОЛЬЗОВАТЕЛИ ==========
+
+export interface RegisteredUser {
+  id: string
+  email: string
+  first_name: string | null
+  last_name: string | null
+  created_at: string
+  updated_at: string
+  password_hash: string | null // NULL если пароль сброшен
+  password_status: 'установлен' | 'сброшен' // Вычисляемое поле
+}
+
+export async function getRegisteredUsers(): Promise<RegisteredUser[]> {
+  try {
+    await safeEnsureAnonymousSession()
+    
+    const { data, error } = await supabase
+      .from('users')
+      .select('id, email, first_name, last_name, created_at, updated_at, password_hash')
+      .order('created_at', { ascending: false })
+    
+    if (error) {
+      logger.error('Ошибка получения зарегистрированных пользователей:', error)
+      throw error
+    }
+    
+    // Добавляем статус пароля
+    // Пустая строка также считается как "сброшен" (временное решение до выполнения SQL скрипта)
+    return (data || []).map(user => ({
+      ...user,
+      password_status: (user.password_hash && user.password_hash.trim() !== '') ? 'установлен' : 'сброшен'
+    }))
+  } catch (error) {
+    logger.error('Ошибка получения зарегистрированных пользователей:', error)
+    return []
+  }
+}
+
+export async function deleteUser(email: string): Promise<void> {
+  try {
+    const normalizedEmail = email.toLowerCase().trim()
+    
+    logger.info('Сброс пароля: начало', { email: normalizedEmail })
+    
+    // Используем админский клиент для обхода RLS
+    const adminSupabase = getSupabaseAdmin()
+    
+    // Проверяем, существует ли пользователь
+    const { data: existingUser, error: checkError } = await adminSupabase
+      .from('users')
+      .select('id, password_hash')
+      .eq('email', normalizedEmail)
+      .maybeSingle()
+    
+    if (checkError) {
+      logger.error('Сброс пароля: ошибка при проверке пользователя', {
+        email: normalizedEmail,
+        error: checkError
+      })
+      throw checkError
+    }
+    
+    if (!existingUser) {
+      logger.error('Сброс пароля: пользователь не найден', { email: normalizedEmail })
+      throw new Error('Пользователь не найден')
+    }
+    
+    logger.info('Сброс пароля: пользователь найден', {
+      email: normalizedEmail,
+      userId: existingUser.id,
+      hasPassword: !!existingUser.password_hash
+    })
+    
+    // Вместо удаления, устанавливаем password_hash в NULL (сброс пароля)
+    // Используем админский клиент для обхода RLS
+    // Сначала пробуем установить NULL
+    let { data: updatedUser, error: updateError } = await adminSupabase
+      .from('users')
+      .update({ password_hash: null })
+      .eq('email', normalizedEmail)
+      .select()
+    
+    // Если ошибка связана с NOT NULL constraint, пробуем установить пустую строку как временное решение
+    if (updateError && updateError.code === '23502' && updateError.message?.includes('password_hash')) {
+      logger.warn('Сброс пароля: колонка password_hash имеет NOT NULL. Используем временное решение (пустая строка). Выполните SQL скрипт supabase-fix-password-hash-nullable.sql в Supabase.')
+      
+      // Пробуем установить пустую строку вместо NULL (временное решение)
+      const tempResult = await adminSupabase
+        .from('users')
+        .update({ password_hash: '' })
+        .eq('email', normalizedEmail)
+        .select()
+      
+      if (tempResult.error) {
+        logger.error('Сброс пароля: ошибка при обновлении (временное решение)', {
+          email: normalizedEmail,
+          userId: existingUser.id,
+          error: tempResult.error
+        })
+        throw new Error('Колонка password_hash не может быть NULL. Выполните SQL скрипт supabase-fix-password-hash-nullable.sql в Supabase для исправления.')
+      }
+      
+      updatedUser = tempResult.data
+      updateError = null
+    } else if (updateError) {
+      logger.error('Сброс пароля: ошибка при обновлении', {
+        email: normalizedEmail,
+        userId: existingUser.id,
+        error: updateError,
+        errorCode: updateError.code,
+        errorMessage: updateError.message,
+        errorDetails: updateError.details,
+        errorHint: updateError.hint
+      })
+      throw updateError
+    }
+    
+    if (!updatedUser || updatedUser.length === 0) {
+      logger.error('Сброс пароля: не удалось обновить пользователя', {
+        email: normalizedEmail,
+        userId: existingUser.id
+      })
+      
+      // Пробуем обновить по ID
+      let { data: retryUpdate, error: retryError } = await adminSupabase
+        .from('users')
+        .update({ password_hash: null })
+        .eq('id', existingUser.id)
+        .select()
+      
+      // Если ошибка связана с NOT NULL constraint, пробуем пустую строку
+      if (retryError && retryError.code === '23502' && retryError.message?.includes('password_hash')) {
+        logger.warn('Сброс пароля: колонка password_hash имеет NOT NULL. Используем временное решение (пустая строка) при обновлении по ID.')
+        const tempRetry = await adminSupabase
+          .from('users')
+          .update({ password_hash: '' })
+          .eq('id', existingUser.id)
+          .select()
+        
+        if (tempRetry.error) {
+          logger.error('Сброс пароля: не удалось обновить даже по ID (временное решение)', {
+            userId: existingUser.id,
+            error: tempRetry.error
+          })
+          throw new Error('Колонка password_hash не может быть NULL. Выполните SQL скрипт supabase-fix-password-hash-nullable.sql в Supabase для исправления.')
+        }
+        
+        retryUpdate = tempRetry.data
+        retryError = null
+      }
+      
+      if (retryError || !retryUpdate || retryUpdate.length === 0) {
+        logger.error('Сброс пароля: не удалось обновить даже по ID', {
+          userId: existingUser.id,
+          error: retryError
+        })
+        throw new Error('Не удалось обновить пароль пользователя. Проверьте настройки Supabase.')
+      }
+      
+      logger.info('Сброс пароля: успешно обновлено по ID', {
+        email: normalizedEmail,
+        userId: existingUser.id
+      })
+      return
+    }
+    
+    logger.info('Пароль успешно сброшен', {
+      email: normalizedEmail,
+      userId: existingUser.id,
+      updatedRows: updatedUser.length
+    })
+  } catch (error) {
+    logger.error('Ошибка сброса пароля пользователя:', error)
+    throw error
+  }
+}
+
+export async function resetUserPassword(email: string): Promise<void> {
+  try {
+    await safeEnsureAnonymousSession()
+    
+    // Проверяем, существует ли пользователь
+    const { data: user, error: checkError } = await supabase
+      .from('users')
+      .select('id')
+      .eq('email', email.toLowerCase().trim())
+      .single()
+    
+    if (checkError || !user) {
+      logger.error('Пользователь не найден для сброса пароля:', checkError)
+      throw new Error('Пользователь не найден')
+    }
+    
+    // Удаляем пользователя - он сможет зарегистрироваться заново
+    const { error } = await supabase
+      .from('users')
+      .delete()
+      .eq('email', email.toLowerCase().trim())
+    
+    if (error) {
+      logger.error('Ошибка сброса пароля (удаления пользователя):', error)
+      throw error
+    }
+  } catch (error) {
+    logger.error('Ошибка сброса пароля:', error)
     throw error
   }
 }

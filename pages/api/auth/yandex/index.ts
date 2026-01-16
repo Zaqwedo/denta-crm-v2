@@ -30,10 +30,24 @@ export default function handler(req: NextApiRequest, res: NextApiResponse) {
     client_id: process.env.YANDEX_CLIENT_ID,
     redirect_uri: redirectUri,
     response_type: 'code',
-    scope: 'login:email login:info',  // Полный scope для получения email и информации о пользователе
   })
   
-  console.log('  - scope:', 'login:email login:info')
+  // Scope можно указать через переменную окружения YANDEX_OAUTH_SCOPE
+  // Если scope не указан, Yandex использует те, что настроены при регистрации приложения
+  // ВАЖНО: Если в настройках приложения scope включены, лучше НЕ указывать их явно в запросе
+  // Это позволит Yandex использовать scope из настроек приложения автоматически
+  const requestedScope = process.env.YANDEX_OAUTH_SCOPE
+  
+  if (requestedScope && requestedScope.trim() !== '') {
+    // Если scope указан явно, используем его (формат: "login:email login:info" через пробел)
+    params.append('scope', requestedScope.trim())
+    console.log('  - scope (явно указан):', requestedScope)
+  } else {
+    // НЕ указываем scope - Yandex автоматически использует те, что настроены в приложении
+    // Это правильный подход, если scope правильно настроены в Yandex OAuth
+    console.log('  - scope: не указан (Yandex использует scope из настроек приложения)')
+    console.log('  - Это нормально, если scope правильно настроены в Yandex OAuth')
+  }
 
   const authUrl = `https://oauth.yandex.com/authorize?${params.toString()}`
   return res.redirect(authUrl)

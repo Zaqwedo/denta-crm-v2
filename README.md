@@ -50,6 +50,8 @@ npm install
 # Supabase
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+# Опционально: для админских операций (сброс паролей и т.д.)
+# SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Google OAuth
 GOOGLE_CLIENT_ID=your-google-client-id
@@ -94,11 +96,26 @@ APP_URL=http://localhost:3000
 2. Создайте новое приложение
 3. Выберите тип: "Веб-сервисы"
 4. Укажите название приложения
-5. Добавьте **Callback URI** (важно: должен точно совпадать):
+5. **ВАЖНО: Включите необходимые разрешения (scope):**
+   - Перейдите в настройки приложения
+   - В разделе "API Yandex ID" или "Разрешения" включите:
+     - `login:email` - для получения email пользователя
+     - `login:info` - для получения базовой информации о пользователе
+6. Добавьте **Callback URI** (важно: должен точно совпадать):
    - **Локальная разработка**: `http://localhost:3000/api/auth/yandex/callback`
    - **Продакшн**: `https://ваш-домен.vercel.app/api/auth/yandex/callback`
-6. Скопируйте `Client ID` и `Client Secret`
-7. Добавьте переменную `YANDEX_REDIRECT_URI` в Vercel (продакшн URL)
+7. Скопируйте `Client ID` и `Client Secret`
+8. Добавьте переменные в `.env.local`:
+   ```
+   YANDEX_CLIENT_ID=your-client-id
+   YANDEX_CLIENT_SECRET=your-client-secret
+   YANDEX_REDIRECT_URI=https://ваш-домен.vercel.app/api/auth/yandex/callback
+   ```
+9. (Опционально) Если нужно указать scope явно, добавьте:
+   ```
+   YANDEX_OAUTH_SCOPE=login:email login:info
+   ```
+   Если не указать, будут использованы scope из настроек приложения.
 
 ### 7. Запуск приложения
 ```bash

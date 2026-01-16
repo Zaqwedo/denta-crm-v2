@@ -4,7 +4,7 @@
 CREATE TABLE IF NOT EXISTS users (
     id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT, -- Может быть NULL если пароль сброшен
     first_name TEXT,
     last_name TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
@@ -24,6 +24,13 @@ CREATE POLICY "Users can view own data" ON users
 -- Разрешаем всем создавать записи, проверка уникальности email происходит на уровне БД
 CREATE POLICY "Anyone can insert users" ON users
   FOR INSERT
+  WITH CHECK (true);
+
+-- Политика для обновления пользователей (смена/сброс пароля)
+-- Разрешаем всем обновлять записи, проверка на уровне API
+CREATE POLICY "Anyone can update users" ON users
+  FOR UPDATE
+  USING (true)
   WITH CHECK (true);
 
 CREATE OR REPLACE FUNCTION update_users_updated_at()

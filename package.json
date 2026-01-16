@@ -17,9 +17,10 @@
   "license": "ISC",
   "type": "module",
   "dependencies": {
+    "@emailjs/browser": "^4.4.1",
     "@supabase/supabase-js": "^2.90.1",
     "@tailwindcss/postcss": "^4.1.18",
-    "@emailjs/browser": "^4.4.1",
+    "csv-parse": "^6.1.0",
     "google-auth-library": "^10.5.0",
     "google-spreadsheet": "^5.0.2",
     "lucide-react": "^0.562.0",

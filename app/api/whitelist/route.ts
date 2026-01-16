@@ -7,7 +7,17 @@ export async function GET(req: NextRequest) {
     const provider = searchParams.get('provider') as 'google' | 'yandex' | 'email' | null
     
     const emails = await getWhitelistEmails(provider || undefined)
-    return NextResponse.json({ emails: emails.map(e => e.email) })
+    // Нормализуем email (lowercase, trim) для корректного сравнения
+    const normalizedEmails = emails.map(e => (e.email || '').toLowerCase().trim()).filter(e => e)
+    
+    console.log('Whitelist API response:', {
+      provider,
+      rawEmails: emails.map(e => e.email),
+      normalizedEmails,
+      count: normalizedEmails.length
+    })
+    
+    return NextResponse.json({ emails: normalizedEmails })
   } catch (error) {
     console.error('Get whitelist error:', error)
     return NextResponse.json(

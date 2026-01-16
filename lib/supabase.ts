@@ -131,3 +131,26 @@ export async function ensureAnonymousSession(): Promise<void> {
 
   return anonymousSessionPromise
 }
+
+/**
+ * Создает клиент Supabase с сервисной ролью для обхода RLS
+ * Используется только для админских операций на сервере
+ */
+export function getSupabaseAdmin() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceRoleKey) {
+    // Если сервисная роль не настроена, используем обычный клиент
+    // Это может привести к ошибкам RLS, но лучше чем падение приложения
+    console.warn('⚠️  SUPABASE_SERVICE_ROLE_KEY не настроен. Админские операции могут не работать из-за RLS.')
+    return supabase
+  }
+
+  return createClient(supabaseUrl, supabaseServiceRoleKey, {
+    auth: {
+      persistSession: false,
+      autoRefreshToken: false,
+    },
+  })
+}

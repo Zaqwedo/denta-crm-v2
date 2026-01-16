@@ -11,6 +11,17 @@ interface WhitelistEmail {
   doctors?: string[]
 }
 
+interface RegisteredUser {
+  id: string
+  email: string
+  first_name: string | null
+  last_name: string | null
+  created_at: string
+  updated_at: string
+  password_hash: string | null
+  password_status: 'установлен' | 'сброшен'
+}
+
 export default function AdminDashboard() {
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(true)
@@ -20,6 +31,7 @@ export default function AdminDashboard() {
   const [doctors, setDoctors] = useState<string[]>([])
   const [nurses, setNurses] = useState<string[]>([])
   const [whitelistEmails, setWhitelistEmails] = useState<WhitelistEmail[]>([])
+  const [registeredUsers, setRegisteredUsers] = useState<RegisteredUser[]>([])
 
   // Формы
   const [newDoctor, setNewDoctor] = useState('')
@@ -59,10 +71,11 @@ export default function AdminDashboard() {
 
   const loadData = async () => {
     try {
-      const [doctorsRes, nursesRes, whitelistRes] = await Promise.all([
+      const [doctorsRes, nursesRes, whitelistRes, usersRes] = await Promise.all([
         fetch('/api/admin/doctors'),
         fetch('/api/admin/nurses'),
         fetch('/api/admin/whitelist'),
+        fetch('/api/admin/users'),
       ])
 
       if (doctorsRes.ok) {
@@ -78,6 +91,11 @@ export default function AdminDashboard() {
       if (whitelistRes.ok) {
         const whitelistData = await whitelistRes.json()
         setWhitelistEmails(whitelistData.emails || [])
+      }
+
+      if (usersRes.ok) {
+        const usersData = await usersRes.json()
+        setRegisteredUsers(usersData.users || [])
       }
     } catch (err) {
       console.error('Load data error:', err)
@@ -291,6 +309,33 @@ export default function AdminDashboard() {
         ? prev.filter(d => d !== doctorName)
         : [...prev, doctorName]
     )
+  }
+
+  const handleResetPassword = async (userEmail: string) => {
+    if (!confirm(`Сбросить пароль для пользователя "${userEmail}"? Пользователь сможет зарегистрироваться заново.`)) {
+      return
+    }
+
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const response = await fetch(`/api/admin/users?email=${encodeURIComponent(userEmail)}`, {
+        method: 'DELETE',
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        setError(data.error || 'Ошибка сброса пароля')
+        return
+      }
+
+      setSuccess(`Пароль для пользователя "${userEmail}" успешно сброшен. Пользователь может зарегистрироваться заново.`)
+      await loadData()
+    } catch (err) {
+      setError('Ошибка при сбросе пароля')
+      console.error('Reset password error:', err)
+    }
   }
 
   const handleDeleteEmail = async (email: string) => {
@@ -618,6 +663,75 @@ export default function AdminDashboard() {
                     )}
                   </div>
                 ))
+              )}
+            </div>
+          </div>
+
+          {/* Зарегистрированные пользователи */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 lg:col-span-2">
+            <h2 className="text-2xl font-bold text-gray-900 mb-4">Зарегистрированные пользователи</h2>
+            
+            <div className="space-y-2">
+              {registeredUsers.length === 0 ? (
+                <p className="text-gray-500 text-sm">Нет зарегистрированных пользователей</p>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-gray-200">
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Email</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Имя</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Фамилия</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Пароль</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Дата регистрации</th>
+                        <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Действия</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {registeredUsers.map((user) => {
+                        const isPasswordSet = user.password_status === 'установлен'
+                        return (
+                          <tr key={user.id} className="border-b border-gray-100 hover:bg-gray-50">
+                            <td className="py-3 px-4 text-sm text-gray-900">{user.email}</td>
+                            <td className="py-3 px-4 text-sm text-gray-600">{user.first_name || '-'}</td>
+                            <td className="py-3 px-4 text-sm text-gray-600">{user.last_name || '-'}</td>
+                            <td className="py-3 px-4 text-sm">
+                              <span className={`px-2 py-1 rounded-lg text-xs font-medium ${
+                                isPasswordSet 
+                                  ? 'bg-green-100 text-green-800' 
+                                  : 'bg-gray-100 text-gray-600'
+                              }`}>
+                                {user.password_status}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-sm text-gray-600">
+                              {new Date(user.created_at).toLocaleDateString('ru-RU', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </td>
+                            <td className="py-3 px-4 text-sm">
+                              <button
+                                onClick={() => isPasswordSet && handleResetPassword(user.email)}
+                                disabled={!isPasswordSet}
+                                className={`px-3 py-1 text-sm rounded-lg transition-all ${
+                                  isPasswordSet
+                                    ? 'bg-orange-600 hover:bg-orange-700 text-white cursor-pointer'
+                                    : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                }`}
+                              >
+                                Сброс пароля
+                              </button>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
               )}
             </div>
           </div>

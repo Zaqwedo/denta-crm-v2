@@ -44,7 +44,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const response = await fetch('/api/whitelist?provider=email')
         if (response.ok) {
           const data = await response.json()
-          setAllowedEmails(data.emails || [])
+          const emails = data.emails || []
+          console.log('Loaded email whitelist:', emails)
+          setAllowedEmails(emails)
+        } else {
+          console.error('Failed to load email whitelist:', response.status, response.statusText)
         }
       } catch (error) {
         console.error('Error loading email whitelist:', error)
@@ -91,9 +95,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const login = (userData: User, authTypeParam?: 'email' | 'google' | 'yandex' | 'vk' | 'telegram') => {
     const finalAuthType = authTypeParam || 'email'
     
-    // Проверяем белый список только для email авторизации
-    if (finalAuthType === 'email' && allowedEmails.length > 0 && !allowedEmails.includes(userData.username || '')) {
-      throw new Error('Доступ запрещен. Ваш email не в списке разрешенных.')
+    // Проверяем, является ли пользователь админом (по username или first_name)
+    const isAdmin = userData.username === 'admin' || userData.first_name === 'Admin'
+    
+    // Проверка whitelist теперь выполняется на сервере в /api/auth/email-login
+    // Здесь оставляем только логирование для отладки
+    if (!isAdmin && finalAuthType === 'email' && allowedEmails.length > 0) {
+      const userEmail = (userData.username || userData.email || '').toLowerCase().trim()
+      const normalizedAllowedEmails = allowedEmails.map(e => e.toLowerCase().trim())
+      
+      console.log('Client-side email whitelist check (info only):', {
+        userEmail,
+        allowedEmails: normalizedAllowedEmails,
+        isInList: normalizedAllowedEmails.includes(userEmail),
+        allowedEmailsCount: normalizedAllowedEmails.length
+      })
+      
+      // Не блокируем на клиенте - проверка уже выполнена на сервере
+      // Но логируем для отладки
     }
 
     setUser(userData)

@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase'
 import { rateLimiter, getClientIp } from '@/lib/rate-limit'
 import crypto from 'crypto'
 import { cookies } from 'next/headers'
+import { getWhitelistEmails } from '@/lib/admin-db'
 
 function verifyPassword(password: string, hashedPassword: string): boolean {
   const [salt, hash] = hashedPassword.split(':')
@@ -39,7 +40,17 @@ export async function POST(req: NextRequest) {
         const cookieStore = await cookies()
         const maxAge = 30 * 24 * 60 * 60
         
+        // Устанавливаем обе cookies для админа
         cookieStore.set('denta_auth', 'valid', {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === 'production',
+          sameSite: 'lax',
+          maxAge,
+          path: '/',
+        })
+        
+        // Устанавливаем admin_auth для проверки прав админа
+        cookieStore.set('admin_auth', 'valid', {
           httpOnly: true,
           secure: process.env.NODE_ENV === 'production',
           sameSite: 'lax',
@@ -66,26 +77,96 @@ export async function POST(req: NextRequest) {
     }
 
     // Обычный вход по email и паролю
+    const normalizedEmail = email.toLowerCase().trim()
     const { data: user, error } = await supabase
       .from('users')
       .select('*')
-      .eq('email', email.toLowerCase().trim())
+      .eq('email', normalizedEmail)
       .single()
 
     if (error || !user) {
+      console.error('Login user not found:', {
+        email: normalizedEmail,
+        error: error?.message,
+        errorCode: error?.code
+      })
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
       )
     }
 
+    // Проверяем, установлен ли пароль
+    // Пустая строка также считается как "пароль не установлен" (временное решение до выполнения SQL скрипта)
+    if (!user.password_hash || user.password_hash.trim() === '') {
+      return NextResponse.json(
+        { error: 'Пароль не установлен. Обратитесь к администратору или зарегистрируйтесь заново.' },
+        { status: 401 }
+      )
+    }
+
+    console.log('Login attempt:', {
+      email: normalizedEmail,
+      hasPasswordHash: !!user.password_hash,
+      passwordHashLength: user.password_hash?.length
+    })
+
     const isValidPassword = verifyPassword(password, user.password_hash)
+
+    console.log('Password verification:', {
+      isValid: isValidPassword,
+      email: normalizedEmail
+    })
 
     if (!isValidPassword) {
       return NextResponse.json(
         { error: 'Неверный email или пароль' },
         { status: 401 }
       )
+    }
+
+    // Проверяем whitelist для email авторизации
+    try {
+      // Проверяем все providers, так как email может быть в любом из них
+      const allWhitelistEmails = await getWhitelistEmails(undefined) // Получаем все email без фильтра по provider
+      const emailWhitelist = await getWhitelistEmails('email') // Только для email provider
+      
+      const allNormalized = allWhitelistEmails.map(e => ({
+        email: (e.email || '').toLowerCase().trim(),
+        provider: e.provider
+      })).filter(e => e.email)
+      
+      const emailNormalized = emailWhitelist.map(e => (e.email || '').toLowerCase().trim()).filter(e => e)
+      
+      console.log('Email login whitelist check (detailed):', {
+        userEmail: normalizedEmail,
+        allWhitelistEmails: allNormalized,
+        emailProviderWhitelist: emailNormalized,
+        isInAllList: allNormalized.some(e => e.email === normalizedEmail),
+        isInEmailList: emailNormalized.includes(normalizedEmail),
+        allCount: allNormalized.length,
+        emailCount: emailNormalized.length
+      })
+      
+      // Проверяем в общем списке (любой provider) или в списке для email
+      const isInWhitelist = allNormalized.some(e => e.email === normalizedEmail) || emailNormalized.includes(normalizedEmail)
+      
+      // Если есть хотя бы один email в whitelist и текущий email не в списке - запрещаем
+      const totalWhitelistCount = allNormalized.length
+      if (totalWhitelistCount > 0 && !isInWhitelist) {
+        console.log('Email not in whitelist, access denied:', {
+          userEmail: normalizedEmail,
+          availableEmails: allNormalized.map(e => `${e.email} (${e.provider})`)
+        })
+        return NextResponse.json(
+          { error: 'Доступ запрещен. Ваш email не в списке разрешенных.' },
+          { status: 403 }
+        )
+      }
+    } catch (whitelistError) {
+      console.error('Error checking whitelist:', whitelistError)
+      // Если ошибка при проверке whitelist, разрешаем вход (fallback)
+      // Но логируем ошибку для отладки
     }
 
     const cookieStore = await cookies()
@@ -120,10 +201,14 @@ export async function POST(req: NextRequest) {
         email: user.email,
       }
     })
-  } catch (error) {
-    console.error('Email login error:', error)
+  } catch (error: any) {
+    console.error('Email login error:', {
+      message: error?.message,
+      stack: error?.stack,
+      name: error?.name,
+    })
     return NextResponse.json(
-      { error: 'Внутренняя ошибка сервера' },
+      { error: `Внутренняя ошибка сервера: ${error?.message || 'Неизвестная ошибка'}` },
       { status: 500 }
     )
   }

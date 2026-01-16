@@ -4,6 +4,7 @@ import { supabase, ensureAnonymousSession } from '../lib/supabase'
 import { logger } from './logger'
 import { getDoctorsForEmailByEmail } from './admin-db'
 import { cookies } from 'next/headers'
+import { checkAdminAuth } from './auth-check'
 
 /**
  * Безопасно устанавливает анонимную сессию, игнорируя ошибки об отключенной анонимной аутентификации
@@ -47,30 +48,38 @@ export async function getPatients(userEmail?: string): Promise<PatientData[]> {
     // Устанавливаем анонимную сессию для RLS
     await safeEnsureAnonymousSession()
     
-    // Если email не передан, пытаемся получить из cookie
-    let email = userEmail
-    if (!email) {
-      try {
-        const cookieStore = await cookies()
-        const emailCookie = cookieStore.get('denta_user_email')
-        email = emailCookie?.value
-      } catch (error) {
-        // Игнорируем ошибки чтения cookie
-      }
-    }
+    // Проверяем, является ли пользователь админом
+    // Админ всегда видит всех пациентов без фильтрации
+    const isAdmin = await checkAdminAuth()
     
     let query = supabase.from('patients').select('*')
     
-    // Если есть email пользователя, проверяем ограничения по врачам
-    if (email) {
-      const allowedDoctors = await getDoctorsForEmailByEmail(email)
+    // Если пользователь не админ, применяем фильтрацию по врачам
+    if (!isAdmin) {
+      // Если email не передан, пытаемся получить из cookie
+      let email = userEmail
+      if (!email) {
+        try {
+          const cookieStore = await cookies()
+          const emailCookie = cookieStore.get('denta_user_email')
+          email = emailCookie?.value
+        } catch (error) {
+          // Игнорируем ошибки чтения cookie
+        }
+      }
       
-      // Если есть ограничения по врачам (массив не пустой), применяем фильтр
-      // Если массив пустой, значит ограничений нет - показываем всех
-      if (allowedDoctors.length > 0) {
-        query = query.in('Доктор', allowedDoctors)
+      // Если есть email пользователя, проверяем ограничения по врачам
+      if (email) {
+        const allowedDoctors = await getDoctorsForEmailByEmail(email)
+        
+        // Если есть ограничения по врачам (массив не пустой), применяем фильтр
+        // Если массив пустой, значит ограничений нет - показываем всех
+        if (allowedDoctors.length > 0) {
+          query = query.in('Доктор', allowedDoctors)
+        }
       }
     }
+    // Если админ - не применяем фильтрацию, показываем всех пациентов
     
     const { data, error } = await query
 

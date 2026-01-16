@@ -14,6 +14,11 @@ export default function LoginPage() {
   const [registerEmail, setRegisterEmail] = useState('')
   const [registerPassword, setRegisterPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
+  const [showChangePassword, setShowChangePassword] = useState(false)
+  const [changePasswordEmail, setChangePasswordEmail] = useState('')
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
+  const [confirmNewPassword, setConfirmNewPassword] = useState('')
   const { login, isAuthenticated, isLoading: authLoading } = useAuth()
   const router = useRouter()
 
@@ -91,7 +96,14 @@ export default function LoginPage() {
         body: JSON.stringify({ email: email.trim() || undefined, password }),
       })
 
-      const data = await response.json()
+      // Проверяем, является ли ответ JSON
+      let data
+      try {
+        data = await response.json()
+      } catch (jsonError) {
+        setError('Ошибка: сервер вернул неверный формат ответа')
+        return
+      }
 
       if (response.ok && data.success) {
         if (data.isAdmin) {
@@ -103,8 +115,16 @@ export default function LoginPage() {
       } else {
         setError(data.error || 'Ошибка входа')
       }
-    } catch (error) {
-      setError('Ошибка при входе')
+    } catch (error: any) {
+      // Более детальная обработка ошибок
+      if (error.name === 'TypeError' && error.message.includes('fetch')) {
+        setError('Ошибка подключения к серверу. Проверьте, запущен ли сервер.')
+      } else if (error.message) {
+        setError(`Ошибка при входе: ${error.message}`)
+      } else {
+        setError('Ошибка при входе. Попробуйте еще раз.')
+      }
+      console.error('Login error:', error)
     } finally {
       setIsLoading(false)
     }
@@ -144,6 +164,44 @@ export default function LoginPage() {
       setIsLoading(false)
     }
   }
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsLoading(true)
+    setError(null)
+    setSuccess(null)
+
+    try {
+      const response = await fetch('/api/auth/change-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: changePasswordEmail,
+          currentPassword,
+          newPassword,
+          confirmPassword: confirmNewPassword,
+        }),
+      })
+
+      const data = await response.json()
+
+      if (response.ok && data.success) {
+        setSuccess(data.message)
+        setShowChangePassword(false)
+        setChangePasswordEmail('')
+        setCurrentPassword('')
+        setNewPassword('')
+        setConfirmNewPassword('')
+      } else {
+        setError(data.error || 'Ошибка при смене пароля')
+      }
+    } catch (error) {
+      setError('Ошибка при смене пароля')
+    } finally {
+      setIsLoading(false)
+    }
+  }
+
 
   return (
     <div className="min-h-screen bg-[#f2f2f7] flex items-center justify-center px-4">
@@ -266,13 +324,21 @@ export default function LoginPage() {
                 </button>
               </form>
 
-              <div className="mt-4 text-center">
+              <div className="mt-4 flex justify-center gap-4">
                 <button
                   type="button"
                   onClick={() => setIsRegistering(true)}
                   className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                 >
                   Зарегистрироваться
+                </button>
+                <span className="text-gray-300">|</span>
+                <button
+                  type="button"
+                  onClick={() => setShowChangePassword(true)}
+                  className="text-blue-600 hover:text-blue-700 text-sm font-medium"
+                >
+                  Сменить пароль
                 </button>
               </div>
             </>
@@ -349,6 +415,128 @@ export default function LoginPage() {
           )}
         </div>
       </div>
+
+      {/* Модальное окно смены пароля */}
+      {showChangePassword && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 px-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-6">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold text-gray-900">Смена пароля</h2>
+              <button
+                onClick={() => {
+                  setShowChangePassword(false)
+                  setError(null)
+                  setSuccess(null)
+                  setChangePasswordEmail('')
+                  setCurrentPassword('')
+                  setNewPassword('')
+                  setConfirmNewPassword('')
+                }}
+                className="text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-xl mb-4">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-xl mb-4">
+                {success}
+              </div>
+            )}
+
+            <form onSubmit={handleChangePassword} className="space-y-4">
+              <div>
+                <label htmlFor="changePasswordEmail" className="block text-sm font-medium text-gray-700 mb-2">
+                  Email
+                </label>
+                <input
+                  id="changePasswordEmail"
+                  type="email"
+                  autoComplete="email"
+                  value={changePasswordEmail}
+                  onChange={(e) => setChangePasswordEmail(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="currentPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Текущий пароль
+                </label>
+                <input
+                  id="currentPassword"
+                  type="password"
+                  autoComplete="current-password"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="newPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Новый пароль (минимум 6 символов)
+                </label>
+                <input
+                  id="newPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
+              <div>
+                <label htmlFor="confirmNewPassword" className="block text-sm font-medium text-gray-700 mb-2">
+                  Повторите новый пароль
+                </label>
+                <input
+                  id="confirmNewPassword"
+                  type="password"
+                  autoComplete="new-password"
+                  value={confirmNewPassword}
+                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                  className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all"
+                  required
+                />
+              </div>
+              <div className="flex gap-3">
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 rounded-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-sm hover:shadow-md"
+                >
+                  {isLoading ? 'Смена пароля...' : 'Сменить пароль'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowChangePassword(false)
+                    setError(null)
+                    setSuccess(null)
+                    setChangePasswordEmail('')
+                    setCurrentPassword('')
+                    setNewPassword('')
+                    setConfirmNewPassword('')
+                  }}
+                  className="px-6 bg-gray-300 hover:bg-gray-400 text-gray-700 font-semibold py-3 rounded-xl transition-all"
+                >
+                  Отмена
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }
