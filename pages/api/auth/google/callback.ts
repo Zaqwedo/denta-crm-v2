@@ -154,8 +154,14 @@ export default async function handler(
     if (process.env.NODE_ENV === 'production') {
       emailCookieValue += '; Secure'
     }
+    
+    // Удаляем admin_auth cookie при входе через Google (если была установлена ранее)
+    let adminAuthDeleteCookie = `admin_auth=; HttpOnly; Path=/; Max-Age=0; SameSite=lax`
+    if (process.env.NODE_ENV === 'production') {
+      adminAuthDeleteCookie += '; Secure'
+    }
 
-    res.setHeader('Set-Cookie', [cookieValue, emailCookieValue])
+    res.setHeader('Set-Cookie', [cookieValue, emailCookieValue, adminAuthDeleteCookie])
 
     // Перенаправляем на страницу пациентов с данными пользователя
     const userInfo = {

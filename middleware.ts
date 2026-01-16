@@ -2,6 +2,20 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export function middleware(request: NextRequest) {
+  // Проверяем, является ли запрос к админским маршрутам
+  const adminPaths = ['/admin/dashboard']
+  const isAdminPath = adminPaths.some(path => request.nextUrl.pathname.startsWith(path))
+
+  if (isAdminPath) {
+    // Для админских маршрутов проверяем наличие admin_auth cookie
+    const adminCookie = request.cookies.get('admin_auth')
+
+    if (!adminCookie || adminCookie.value !== 'valid') {
+      // Если админской куки нет или она невалидна, перенаправляем на страницу входа в админку
+      return NextResponse.redirect(new URL('/admin', request.url))
+    }
+  }
+
   // Проверяем, является ли запрос к защищенным маршрутам
   const protectedPaths = ['/patients', '/calendar', '/new']
   const isProtectedPath = protectedPaths.some(path => request.nextUrl.pathname.startsWith(path))

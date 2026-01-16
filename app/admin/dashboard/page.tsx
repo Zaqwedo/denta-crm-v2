@@ -49,9 +49,18 @@ export default function AdminDashboard() {
   useEffect(() => {
     const checkAuthAndLoad = async () => {
       try {
-        // Проверяем авторизацию через API
-        const doctorsRes = await fetch('/api/admin/doctors')
-        if (doctorsRes.status === 401) {
+        // Проверяем авторизацию через специальный API endpoint для проверки админских прав
+        const authCheckRes = await fetch('/api/admin/check-auth', { cache: 'no-store' })
+        
+        // Если не авторизован как админ (401 или 403), перенаправляем на страницу входа
+        if (authCheckRes.status === 401 || authCheckRes.status === 403) {
+          router.push('/admin')
+          return
+        }
+        
+        // Проверяем, что ответ успешный и содержит isAdmin: true
+        const authData = await authCheckRes.json()
+        if (!authData.isAdmin) {
           router.push('/admin')
           return
         }
