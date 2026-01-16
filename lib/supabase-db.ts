@@ -98,8 +98,8 @@ export async function getPatients(userEmail?: string): Promise<PatientData[]> {
           doctorsCount: allowedDoctors.length
         })
         
-        // Если есть ограничения по врачам (массив не пустой), применяем фильтр
-        // Если массив пустой, значит ограничений нет - показываем всех
+        // НОВАЯ ЛОГИКА: Если врачи указаны - показываем только их пациентов
+        // Если врачи НЕ указаны - НЕ показываем никаких пациентов
         if (allowedDoctors.length > 0) {
           logger.info('getPatients: применяем фильтр по врачам', {
             email: normalizedEmail,
@@ -117,7 +117,6 @@ export async function getPatients(userEmail?: string): Promise<PatientData[]> {
           const normalizedAllowedDoctors = allowedDoctors.map(d => d.trim()).filter(d => d)
           
           // Применяем фильтр - используем точное совпадение
-          // Если нужно более гибкое сравнение, можно использовать .or() с ILIKE
           query = query.in('Доктор', normalizedAllowedDoctors)
           
           // Логируем финальный запрос для отладки
@@ -127,16 +126,26 @@ export async function getPatients(userEmail?: string): Promise<PatientData[]> {
             originalDoctors: allowedDoctors
           })
         } else {
-          logger.warn('getPatients: ВНИМАНИЕ - ограничений по врачам нет, показываем всех пациентов', {
+          // Если врачи не указаны - НЕ показываем пациентов
+          // Применяем фильтр, который ничего не вернет (несуществующий врач)
+          logger.warn('getPatients: ВНИМАНИЕ - врачи не указаны для email, показываем 0 пациентов', {
             email: normalizedEmail,
             reason: 'allowedDoctors array is empty',
-            warning: 'Это может быть проблемой, если для email должны быть ограничения!'
+            action: 'Применяем фильтр, который вернет пустой результат'
           })
+          
+          // Применяем фильтр с несуществующим врачом, чтобы вернуть пустой результат
+          query = query.eq('Доктор', '__NO_DOCTORS_SELECTED__')
         }
       } else {
-        logger.warn('getPatients: ВНИМАНИЕ - email не найден, показываем всех пациентов', {
-          warning: 'Email не был передан и не найден в cookie!'
+        // Если email не найден - НЕ показываем пациентов
+        logger.warn('getPatients: ВНИМАНИЕ - email не найден, показываем 0 пациентов', {
+          warning: 'Email не был передан и не найден в cookie!',
+          action: 'Применяем фильтр, который вернет пустой результат'
         })
+        
+        // Применяем фильтр с несуществующим врачом, чтобы вернуть пустой результат
+        query = query.eq('Доктор', '__NO_EMAIL_FOUND__')
       }
     } else {
       // Если админ, пытаемся получить email для логов, но не применяем фильтр

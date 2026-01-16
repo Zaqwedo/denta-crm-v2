@@ -582,8 +582,8 @@ export default function AdminDashboard() {
                     ))}
                   </div>
                   {selectedDoctors.length === 0 && (
-                    <p className="text-xs text-gray-500 mt-2">
-                      Если не выбрано ни одного врача, email будет видеть всех пациентов
+                    <p className="text-xs text-red-600 font-medium mt-2">
+                      ⚠️ Если не выбрано ни одного врача, email не будет видеть пациентов
                     </p>
                   )}
                 </div>
@@ -599,37 +599,11 @@ export default function AdminDashboard() {
                     key={item.id}
                     className="p-4 bg-gray-50 rounded-xl space-y-2"
                   >
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center gap-3">
-                        <span className="text-gray-900 font-medium">{item.email}</span>
-                        <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg">
-                          {item.provider}
-                        </span>
-                      </div>
-                      <div className="flex gap-2">
-                        <button
-                          onClick={() => {
-                            if (editingEmail?.id === item.id) {
-                              setEditingEmail(null)
-                            } else {
-                              // Создаем копию объекта с текущими врачами для редактирования
-                              setEditingEmail({
-                                ...item,
-                                doctors: item.doctors ? [...item.doctors] : []
-                              })
-                            }
-                          }}
-                          className="px-3 py-1 bg-gray-600 hover:bg-gray-700 text-white text-sm rounded-lg transition-all"
-                        >
-                          {editingEmail?.id === item.id ? 'Отмена' : 'Изменить врачей'}
-                        </button>
-                        <button
-                          onClick={() => handleDeleteEmail(item.email)}
-                          className="px-3 py-1 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-all"
-                        >
-                          Удалить
-                        </button>
-                      </div>
+                    <div className="flex items-center gap-3">
+                      <span className="text-gray-900 font-medium">{item.email}</span>
+                      <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-lg">
+                        {item.provider}
+                      </span>
                     </div>
                     
                     {/* Отображение врачей */}
@@ -646,8 +620,34 @@ export default function AdminDashboard() {
                         ))}
                       </div>
                     ) : (
-                      <p className="text-xs text-gray-500">Видит всех пациентов</p>
+                      <p className="text-xs text-red-600 font-medium">❌ Пациентов не видит</p>
                     )}
+                    
+                    {/* Кнопки внизу карточки */}
+                    <div className="flex gap-2 pt-2 border-t border-gray-200">
+                      <button
+                        onClick={() => {
+                          if (editingEmail?.id === item.id) {
+                            setEditingEmail(null)
+                          } else {
+                            // Создаем копию объекта с текущими врачами для редактирования
+                            setEditingEmail({
+                              ...item,
+                              doctors: item.doctors ? [...item.doctors] : []
+                            })
+                          }
+                        }}
+                        className="flex-1 px-2 py-1.5 bg-gray-600 hover:bg-gray-700 text-white text-xs rounded-lg transition-all"
+                      >
+                        {editingEmail?.id === item.id ? 'Отмена' : 'Изменить врачей'}
+                      </button>
+                      <button
+                        onClick={() => handleDeleteEmail(item.email)}
+                        className="flex-1 px-2 py-1.5 bg-red-600 hover:bg-red-700 text-white text-xs rounded-lg transition-all"
+                      >
+                        Удалить
+                      </button>
+                    </div>
                     
                     {/* Форма редактирования врачей */}
                     {editingEmail?.id === item.id && (
