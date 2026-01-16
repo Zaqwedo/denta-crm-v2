@@ -66,7 +66,7 @@ export default function LoginPage() {
         } else if (errorParam === 'yandex_unsupported_response_type') {
           setError('Неподдерживаемый тип ответа Yandex OAuth. Обратитесь к администратору.')
         } else if (errorParam === 'yandex_invalid_scope') {
-          const detailsParam = searchParams.get('details')
+          const detailsParam = urlParams.get('details')
           const details = detailsParam ? decodeURIComponent(detailsParam) : ''
           setError(details || 'Неверный scope для Yandex OAuth. Если scope правильно настроены в приложении, попробуйте не указывать их явно в запросе (убедитесь, что переменная YANDEX_OAUTH_SCOPE не установлена).')
         } else if (errorParam === 'yandex_email_not_allowed') {
